@@ -13,11 +13,10 @@ export interface Veiculo {
   id: string;
   prefixo: string;
   placa: string;
-  marca: string;
-  modelo: string;
-  ano: number;
-  cor: string | null;
-  observacoes: string | null;
+  modelo: string | null;
+  local_trabalho: string;
+  nome_motorista: string | null;
+  telefone_motorista: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -62,21 +61,19 @@ export interface OrdemComVeiculo extends OrdemManutencao {
 export interface CreateVeiculoDTO {
   prefixo: string;
   placa: string;
-  marca: string;
-  modelo: string;
-  ano: number;
-  cor?: string;
-  observacoes?: string;
+  modelo?: string;
+  local_trabalho: string;
+  nome_motorista?: string;
+  telefone_motorista?: string;
 }
 
 export interface UpdateVeiculoDTO {
   prefixo?: string;
   placa?: string;
-  marca?: string;
   modelo?: string;
-  ano?: number;
-  cor?: string;
-  observacoes?: string;
+  local_trabalho?: string;
+  nome_motorista?: string;
+  telefone_motorista?: string;
 }
 
 export interface CreateOrdemDTO {

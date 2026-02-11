@@ -18,32 +18,20 @@ export default function VeiculoForm({ veiculo, onSuccess }: VeiculoFormProps) {
   const [formData, setFormData] = useState({
     prefixo: veiculo?.prefixo || '',
     placa: veiculo?.placa || '',
-    marca: veiculo?.marca || '',
     modelo: veiculo?.modelo || '',
-    ano: veiculo?.ano || new Date().getFullYear(),
-    cor: veiculo?.cor || '',
-    observacoes: veiculo?.observacoes || '',
+    local_trabalho: veiculo?.local_trabalho || '',
+    nome_motorista: veiculo?.nome_motorista || '',
+    telefone_motorista: veiculo?.telefone_motorista || '',
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     
-    if (name === 'ano') {
-      setFormData(prev => ({
-        ...prev,
-        [name]: parseInt(value) || new Date().getFullYear(),
-      }));
-    } else if (name === 'observacoes') {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value,
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value.toUpperCase(),
-      }));
-    }
+    // Todos os campos devem ser em CAIXA ALTA
+    setFormData(prev => ({
+      ...prev,
+      [name]: value.toUpperCase(),
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -67,11 +55,10 @@ export default function VeiculoForm({ veiculo, onSuccess }: VeiculoFormProps) {
           setFormData({
             prefixo: '',
             placa: '',
-            marca: '',
             modelo: '',
-            ano: new Date().getFullYear(),
-            cor: '',
-            observacoes: '',
+            local_trabalho: '',
+            nome_motorista: '',
+            telefone_motorista: '',
           });
         }
       } else {
@@ -130,24 +117,8 @@ export default function VeiculoForm({ veiculo, onSuccess }: VeiculoFormProps) {
         </div>
 
         <div>
-          <label htmlFor="marca" className="block text-sm font-medium text-gray-700 mb-1">
-            Marca <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            id="marca"
-            name="marca"
-            value={formData.marca}
-            onChange={handleChange}
-            required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
-            placeholder="FIAT"
-          />
-        </div>
-
-        <div>
           <label htmlFor="modelo" className="block text-sm font-medium text-gray-700 mb-1">
-            Modelo <span className="text-red-500">*</span>
+            Modelo
           </label>
           <input
             type="text"
@@ -155,57 +126,54 @@ export default function VeiculoForm({ veiculo, onSuccess }: VeiculoFormProps) {
             name="modelo"
             value={formData.modelo}
             onChange={handleChange}
-            required
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
-            placeholder="UNO"
+            placeholder="FIAT UNO"
           />
         </div>
 
         <div>
-          <label htmlFor="ano" className="block text-sm font-medium text-gray-700 mb-1">
-            Ano <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="number"
-            id="ano"
-            name="ano"
-            value={formData.ano}
-            onChange={handleChange}
-            required
-            min="1900"
-            max={new Date().getFullYear() + 1}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="2024"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="cor" className="block text-sm font-medium text-gray-700 mb-1">
-            Cor
+          <label htmlFor="local_trabalho" className="block text-sm font-medium text-gray-700 mb-1">
+            Local de Trabalho <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
-            id="cor"
-            name="cor"
-            value={formData.cor}
+            id="local_trabalho"
+            name="local_trabalho"
+            value={formData.local_trabalho}
             onChange={handleChange}
+            required
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
-            placeholder="BRANCO"
+            placeholder="SEDE"
           />
         </div>
 
-        <div className="md:col-span-2">
-          <label htmlFor="observacoes" className="block text-sm font-medium text-gray-700 mb-1">
-            Observações
+        <div>
+          <label htmlFor="nome_motorista" className="block text-sm font-medium text-gray-700 mb-1">
+            Nome do Motorista
           </label>
-          <textarea
-            id="observacoes"
-            name="observacoes"
-            value={formData.observacoes}
+          <input
+            type="text"
+            id="nome_motorista"
+            name="nome_motorista"
+            value={formData.nome_motorista}
             onChange={handleChange}
-            rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Informações adicionais sobre o veículo..."
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
+            placeholder="JOÃO DA SILVA"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="telefone_motorista" className="block text-sm font-medium text-gray-700 mb-1">
+            Telefone do Motorista
+          </label>
+          <input
+            type="text"
+            id="telefone_motorista"
+            name="telefone_motorista"
+            value={formData.telefone_motorista}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
+            placeholder="(11) 98765-4321"
           />
         </div>
       </div>

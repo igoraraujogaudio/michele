@@ -62,7 +62,7 @@ export default function VeiculoTable({ veiculos }: VeiculoTableProps) {
     if (veiculo.ordem_atual) {
       return 'OFICINA';
     }
-    return 'CAMPO';
+    return veiculo.local_trabalho || 'N/A';
   };
 
   if (veiculos.length === 0) {
@@ -86,10 +86,10 @@ export default function VeiculoTable({ veiculos }: VeiculoTableProps) {
                 Placa
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Marca/Modelo
+                Modelo
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Ano
+                Motorista
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Status
@@ -116,10 +116,15 @@ export default function VeiculoTable({ veiculos }: VeiculoTableProps) {
                     <div className="text-sm text-gray-900">{veiculo.placa}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{veiculo.marca} {veiculo.modelo}</div>
+                    <div className="text-sm text-gray-900">{veiculo.modelo || '-'}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{veiculo.ano}</div>
+                    <div className="text-sm text-gray-900">
+                      {veiculo.nome_motorista || '-'}
+                      {veiculo.telefone_motorista && (
+                        <div className="text-xs text-gray-500">{veiculo.telefone_motorista}</div>
+                      )}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${status.color}`}>
