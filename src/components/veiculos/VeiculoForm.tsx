@@ -44,9 +44,37 @@ export default function VeiculoForm({ veiculo, onSuccess }: VeiculoFormProps) {
     
     // Campos text devem ser em CAIXA ALTA
     if (e.target instanceof HTMLInputElement) {
+      let processedValue = value.toUpperCase();
+      
+      // Formatação automática de placa (ABC-1234 ou ABC1D23)
+      if (name === 'placa') {
+        // Remove caracteres não alfanuméricos
+        processedValue = processedValue.replace(/[^A-Z0-9]/g, '');
+        
+        // Adiciona hífen automaticamente
+        if (processedValue.length >= 4) {
+          // Formato antigo: ABC1234 -> ABC-1234
+          if (processedValue.length <= 7 && /^[A-Z]{3}[0-9]{4}$/.test(processedValue)) {
+            processedValue = processedValue.slice(0, 3) + '-' + processedValue.slice(3);
+          }
+          // Formato novo: ABC1D23 -> ABC1D23 (sem hífen)
+          else if (processedValue.length === 7 && /^[A-Z]{3}[0-9][A-Z][0-9]{2}$/.test(processedValue)) {
+            // Mantém sem hífen para formato novo
+          }
+          // Formato mercosul: ABC1D23 -> ABC1D-23
+          else if (processedValue.length === 7 && /^[A-Z]{3}[0-9][A-Z][0-9]{2}$/.test(processedValue)) {
+            processedValue = processedValue.slice(0, 5) + '-' + processedValue.slice(5);
+          }
+          // Adiciona hífen após 3 caracteres para outros casos
+          else if (processedValue.length > 3) {
+            processedValue = processedValue.slice(0, 3) + '-' + processedValue.slice(3, 7);
+          }
+        }
+      }
+      
       setFormData(prev => ({
         ...prev,
-        [name]: value.toUpperCase(),
+        [name]: processedValue,
       }));
     } else {
       setFormData(prev => ({
@@ -144,7 +172,7 @@ export default function VeiculoForm({ veiculo, onSuccess }: VeiculoFormProps) {
             onChange={handleChange}
             required
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
-            placeholder="ABC1234"
+            placeholder="ABC-1234"
           />
         </div>
 
