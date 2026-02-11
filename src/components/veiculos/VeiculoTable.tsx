@@ -22,8 +22,9 @@ export default function VeiculoTable({ veiculos }: VeiculoTableProps) {
   const endIndex = startIndex + itemsPerPage;
   const currentVeiculos = veiculos.slice(startIndex, endIndex);
 
-  const handleDelete = async (id: string, prefixo: string) => {
-    if (!confirm(`Tem certeza que deseja excluir o veículo ${prefixo}?`)) {
+  const handleDelete = async (id: string, prefixo: string | null) => {
+    const prefixoDisplay = prefixo || 'sem prefixo';
+    if (!confirm(`Tem certeza que deseja excluir o veículo ${prefixoDisplay}?`)) {
       return;
     }
 

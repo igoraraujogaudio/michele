@@ -34,6 +34,18 @@ export const veiculoSchema = z.object({
 
 export const updateVeiculoSchema = veiculoSchema.partial();
 
+export const statusOrdemSchema = z.enum([
+  'EM MANUTENÇÃO',
+  'AGUARDANDO PEÇA',
+  'REPARO PARCIAL',
+  'PRONTO',
+  'FORNECEDOR EXTERNO',
+  'PARADO PRONTO CJ',
+  'PARADO PRONTO CG',
+  'PARADO EM MANUTENÇÃO CJ',
+  'PARADO EM MANUTENÇÃO CG',
+]);
+
 export const ordemManutencaoSchema = z.object({
   numero_ordem: z.string()
     .min(1, 'Número da ordem é obrigatório')
@@ -42,6 +54,10 @@ export const ordemManutencaoSchema = z.object({
   
   veiculo_id: z.string()
     .uuid('ID do veículo inválido'),
+  
+  status: statusOrdemSchema
+    .default('EM MANUTENÇÃO')
+    .optional(),
   
   descricao: z.string()
     .min(1, 'Descrição é obrigatória')
@@ -55,6 +71,8 @@ export const ordemManutencaoSchema = z.object({
     .default(false)
     .optional(),
   
+  veiculo_reserva_id: z.string().uuid('ID do veículo reserva inválido').optional().or(z.literal('')),
+  
   nome_motorista: z.string()
     .max(200, 'Nome do motorista deve ter no máximo 200 caracteres')
     .transform(val => val.toUpperCase().trim())
@@ -64,18 +82,6 @@ export const ordemManutencaoSchema = z.object({
     .max(20, 'Telefone deve ter no máximo 20 caracteres')
     .optional(),
 });
-
-export const statusOrdemSchema = z.enum([
-  'EM MANUTENÇÃO',
-  'AGUARDANDO PEÇA',
-  'REPARO PARCIAL',
-  'PRONTO',
-  'FORNECEDOR EXTERNO',
-  'PARADO PRONTO CJ',
-  'PARADO PRONTO CG',
-  'PARADO EM MANUTENÇÃO CJ',
-  'PARADO EM MANUTENÇÃO CG',
-]);
 
 export const updateOrdemSchema = z.object({
   status: statusOrdemSchema.optional(),

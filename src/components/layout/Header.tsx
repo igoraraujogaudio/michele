@@ -76,8 +76,17 @@ export function Header({ user }: HeaderProps) {
             <Link href="/ordens" className="text-gray-700 hover:text-blue-600 transition">
               Ordens
             </Link>
-            <Link href="/relatorios/em-manutencao" className="text-gray-700 hover:text-blue-600 transition">
-              Relatórios
+            <Link href="/relatorios/manutencao" className="text-gray-700 hover:text-blue-600 transition">
+              Em Manutenção
+            </Link>
+            <Link href="/relatorios/disponiveis" className="text-gray-700 hover:text-blue-600 transition">
+              Disponíveis
+            </Link>
+            <Link href="/cadastros/prefixos" className="text-gray-700 hover:text-blue-600 transition">
+              Prefixos
+            </Link>
+            <Link href="/cadastros/locais" className="text-gray-700 hover:text-blue-600 transition">
+              Locais
             </Link>
             <Link href="/upload" className="text-gray-700 hover:text-blue-600 transition">
               Upload
@@ -151,11 +160,32 @@ export function Header({ user }: HeaderProps) {
                 Ordens
               </Link>
               <Link
-                href="/relatorios/em-manutencao"
+                href="/relatorios/manutencao"
                 className="text-gray-700 hover:text-blue-600 transition px-2 py-1"
                 onClick={() => setMenuOpen(false)}
               >
-                Relatórios
+                Em Manutenção
+              </Link>
+              <Link
+                href="/relatorios/disponiveis"
+                className="text-gray-700 hover:text-blue-600 transition px-2 py-1"
+                onClick={() => setMenuOpen(false)}
+              >
+                Disponíveis
+              </Link>
+              <Link
+                href="/cadastros/prefixos"
+                className="text-gray-700 hover:text-blue-600 transition px-2 py-1"
+                onClick={() => setMenuOpen(false)}
+              >
+                Prefixos
+              </Link>
+              <Link
+                href="/cadastros/locais"
+                className="text-gray-700 hover:text-blue-600 transition px-2 py-1"
+                onClick={() => setMenuOpen(false)}
+              >
+                Locais
               </Link>
               <Link
                 href="/upload"

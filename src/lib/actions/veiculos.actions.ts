@@ -9,7 +9,8 @@ export async function createVeiculo(data: CreateVeiculoDTO): Promise<ApiResponse
   try {
     const supabase = await createClient();
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    console.log('[createVeiculo] auth debug:', { userEmail: user?.email, authError: authError?.message, authCode: authError?.status });
     if (!user) {
       return { success: false, error: 'Não autenticado' };
     }
@@ -259,5 +260,65 @@ export async function listVeiculosDisponiveis(): Promise<ApiResponse<Veiculo[]>>
       return { success: false, error: error.message };
     }
     return { success: false, error: 'Erro desconhecido ao listar veículos disponíveis' };
+  }
+}
+
+export async function listPrefixosAtivos(): Promise<ApiResponse<any[]>> {
+  try {
+    const supabase = await createClient();
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { success: false, error: 'Não autenticado' };
+    }
+
+    const { data, error } = await supabase
+      .from('prefixos')
+      .select('*')
+      .eq('ativo', true)
+      .order('nome', { ascending: true });
+
+    if (error) {
+      console.error('Erro ao listar prefixos:', error);
+      return { success: false, error: 'Erro ao listar prefixos' };
+    }
+
+    return { success: true, data: data || [] };
+
+  } catch (error) {
+    if (error instanceof Error) {
+      return { success: false, error: error.message };
+    }
+    return { success: false, error: 'Erro desconhecido ao listar prefixos' };
+  }
+}
+
+export async function listLocaisTrabalhoAtivos(): Promise<ApiResponse<any[]>> {
+  try {
+    const supabase = await createClient();
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { success: false, error: 'Não autenticado' };
+    }
+
+    const { data, error } = await supabase
+      .from('locais_trabalho')
+      .select('*')
+      .eq('ativo', true)
+      .order('nome', { ascending: true });
+
+    if (error) {
+      console.error('Erro ao listar locais de trabalho:', error);
+      return { success: false, error: 'Erro ao listar locais de trabalho' };
+    }
+
+    return { success: true, data: data || [] };
+
+  } catch (error) {
+    if (error instanceof Error) {
+      return { success: false, error: error.message };
+    }
+    return { success: false, error: 'Erro desconhecido ao listar locais de trabalho' };
   }
 }

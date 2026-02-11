@@ -11,10 +11,12 @@ export type StatusOrdem =
 
 export interface Veiculo {
   id: string;
-  prefixo: string;
+  prefixo: string | null;          // Mantido para compatibilidade
+  prefixo_id: string | null;      // Nova foreign key
   placa: string;
   modelo: string | null;
-  local_trabalho: string;
+  local_trabalho: string | null;   // Mantido para compatibilidade
+  local_trabalho_id: string | null; // Nova foreign key
   nome_motorista: string | null;
   telefone_motorista: string | null;
   created_at: string;
@@ -29,6 +31,7 @@ export interface OrdemManutencao {
   descricao: string;
   observacoes: string | null;
   is_reserva: boolean;
+  veiculo_reserva_id: string | null;
   nome_motorista: string | null;
   telefone_motorista: string | null;
   data_abertura: string;
@@ -58,20 +61,38 @@ export interface OrdemComVeiculo extends OrdemManutencao {
   veiculo: Veiculo;
 }
 
+export interface Prefixo {
+  id: string;
+  nome: string;
+  descricao: string | null;
+  ativo: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LocalTrabalho {
+  id: string;
+  nome: string;
+  descricao: string | null;
+  ativo: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface CreateVeiculoDTO {
-  prefixo: string;
+  prefixo_id: string;
   placa: string;
   modelo?: string;
-  local_trabalho: string;
+  local_trabalho_id: string;
   nome_motorista?: string;
   telefone_motorista?: string;
 }
 
 export interface UpdateVeiculoDTO {
-  prefixo?: string;
+  prefixo_id?: string;
   placa?: string;
   modelo?: string;
-  local_trabalho?: string;
+  local_trabalho_id?: string;
   nome_motorista?: string;
   telefone_motorista?: string;
 }
@@ -81,7 +102,9 @@ export interface CreateOrdemDTO {
   veiculo_id: string;
   descricao: string;
   observacoes?: string;
+  status?: StatusOrdem;
   is_reserva?: boolean;
+  veiculo_reserva_id?: string | null;
   nome_motorista?: string;
   telefone_motorista?: string;
 }

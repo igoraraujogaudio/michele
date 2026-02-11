@@ -3,16 +3,18 @@ import { redirect } from 'next/navigation';
 import OrdemDetail from '@/components/ordens/OrdemDetail';
 import type { OrdemComVeiculo } from '@/lib/types/database.types';
 
-export default async function OrdemPage({ params }: { params: { id: string } }) {
+export default async function OrdemPage({ params }: { params: Promise<{ id: string }> }) {
   const supabase = await createClient();
+  const { id } = await params;
 
   const { data: ordem, error } = await supabase
     .from('ordens_manutencao')
     .select(`
       *,
-      veiculo:veiculos(*)
+      veiculo:veiculos!ordens_manutencao_veiculo_id_fkey(*),
+      veiculo_reserva:veiculos!ordens_manutencao_veiculo_reserva_id_fkey(*)
     `)
-    .eq('id', params.id)
+    .eq('id', id)
     .single();
 
   if (error || !ordem) {

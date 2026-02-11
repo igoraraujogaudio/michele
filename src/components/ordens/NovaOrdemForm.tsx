@@ -38,6 +38,7 @@ export default function NovaOrdemForm({ veiculosDisponiveis }: NovaOrdemFormProp
     is_reserva: false,
     nome_motorista: '',
     telefone_motorista: '',
+    veiculo_reserva_id: '',
   });
 
   useEffect(() => {
@@ -60,6 +61,7 @@ export default function NovaOrdemForm({ veiculosDisponiveis }: NovaOrdemFormProp
       const dataToSubmit = {
         ...formData,
         is_reserva: reservaDesignada,
+        veiculo_reserva_id: formData.veiculo_reserva_id || undefined,
       };
 
       const result = await createOrdemManutencao(dataToSubmit);
@@ -228,6 +230,9 @@ export default function NovaOrdemForm({ veiculosDisponiveis }: NovaOrdemFormProp
 
       <div className="bg-white rounded-lg shadow p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Veículo Reserva</h2>
+        <p className="text-sm text-gray-600 mb-4">
+          Indique se foi designado um veículo reserva para substituir o veículo em manutenção
+        </p>
         
         <div className="mb-4">
           <label className="flex items-center space-x-2 cursor-pointer">
@@ -237,22 +242,27 @@ export default function NovaOrdemForm({ veiculosDisponiveis }: NovaOrdemFormProp
               onChange={(e) => {
                 setReservaDesignada(e.target.checked);
                 if (!e.target.checked) {
-                  setFormData(prev => ({ ...prev, is_reserva: false }));
+                  setFormData(prev => ({ ...prev, is_reserva: false, veiculo_reserva_id: '' }));
                 }
               }}
               className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
             />
-            <span className="text-sm font-medium text-gray-700">Designar veículo reserva</span>
+            <span className="text-sm font-medium text-gray-700">Foi designado veículo reserva</span>
           </label>
         </div>
 
         {reservaDesignada && (
           <div>
             <label htmlFor="veiculo_reserva" className="block text-sm font-medium text-gray-700 mb-1">
-              Veículo Reserva <span className="text-red-500">*</span>
+              Qual veículo substituiu? <span className="text-red-500">*</span>
             </label>
+            <p className="text-xs text-gray-500 mb-2">
+              Selecione o veículo que foi usado como reserva para substituir o prefixo em manutenção
+            </p>
             <select
               id="veiculo_reserva"
+              value={formData.veiculo_reserva_id}
+              onChange={(e) => setFormData(prev => ({ ...prev, veiculo_reserva_id: e.target.value }))}
               required={reservaDesignada}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >

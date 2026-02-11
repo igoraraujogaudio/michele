@@ -135,7 +135,7 @@ export class VehicleService {
       .from('ordens_manutencao')
       .select(`
         *,
-        veiculo:veiculos(*)
+        veiculo:veiculos!ordens_manutencao_veiculo_id_fkey(*)
       `)
       .is('data_fechamento', null)
       .order('data_abertura', { ascending: true })

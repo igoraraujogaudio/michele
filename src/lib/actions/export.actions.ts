@@ -145,7 +145,8 @@ export async function exportVeiculosEmManutencaoToExcel(): Promise<{ success: bo
       .from('ordens_manutencao')
       .select(`
         *,
-        veiculo:veiculos(*)
+        veiculo:veiculos!ordens_manutencao_veiculo_id_fkey(*),
+        veiculo_reserva:veiculos!ordens_manutencao_veiculo_reserva_id_fkey(*)
       `)
       .is('data_fechamento', null)
       .order('data_abertura', { ascending: true });

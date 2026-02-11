@@ -259,7 +259,8 @@ export async function getOrdemManutencao(id: string): Promise<ApiResponse<OrdemC
       .from('ordens_manutencao')
       .select(`
         *,
-        veiculo:veiculos(*)
+        veiculo:veiculos!ordens_manutencao_veiculo_id_fkey(*),
+        veiculo_reserva:veiculos!ordens_manutencao_veiculo_reserva_id_fkey(*)
       `)
       .eq('id', id)
       .single();
@@ -291,7 +292,8 @@ export async function listOrdensManutencao(): Promise<ApiResponse<OrdemComVeicul
       .from('ordens_manutencao')
       .select(`
         *,
-        veiculo:veiculos(*)
+        veiculo:veiculos!ordens_manutencao_veiculo_id_fkey(*),
+        veiculo_reserva:veiculos!ordens_manutencao_veiculo_reserva_id_fkey(*)
       `)
       .order('data_abertura', { ascending: false });
 
@@ -323,7 +325,8 @@ export async function listVeiculosEmManutencao(): Promise<ApiResponse<OrdemComVe
       .from('ordens_manutencao')
       .select(`
         *,
-        veiculo:veiculos(*)
+        veiculo:veiculos!ordens_manutencao_veiculo_id_fkey(*),
+        veiculo_reserva:veiculos!ordens_manutencao_veiculo_reserva_id_fkey(*)
       `)
       .is('data_fechamento', null)
       .order('data_abertura', { ascending: true });

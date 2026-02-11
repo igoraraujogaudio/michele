@@ -32,7 +32,8 @@ export default async function DashboardPage() {
     .from('ordens_manutencao')
     .select(`
       *,
-      veiculo:veiculos(*)
+      veiculo:veiculos!ordens_manutencao_veiculo_id_fkey(*),
+      veiculo_reserva:veiculos!ordens_manutencao_veiculo_reserva_id_fkey(*)
     `)
     .order('data_abertura', { ascending: false })
     .limit(10)
@@ -98,8 +99,8 @@ export default async function DashboardPage() {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          <Link href="/veiculos/novo" className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg shadow-lg p-6 text-white hover:shadow-xl transition-shadow">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Link href="/veiculos" className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg shadow-lg p-6 text-white hover:shadow-xl transition-shadow">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-semibold">Novo Veículo</h3>
@@ -119,13 +120,23 @@ export default async function DashboardPage() {
             </div>
           </Link>
 
-          <Link href="/relatorios/em-manutencao" className="bg-gradient-to-r from-purple-600 to-purple-700 rounded-lg shadow-lg p-6 text-white hover:shadow-xl transition-shadow">
+          <Link href="/relatorios/manutencao" className="bg-gradient-to-r from-orange-600 to-orange-700 rounded-lg shadow-lg p-6 text-white hover:shadow-xl transition-shadow">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-semibold">Relatórios</h3>
-                <p className="text-sm text-purple-100 mt-1">Ver relatórios</p>
+                <h3 className="text-lg font-semibold">Em Manutenção</h3>
+                <p className="text-sm text-orange-100 mt-1">Ver veículos em manutenção</p>
               </div>
-              <TrendingUp className="h-8 w-8" />
+              <Wrench className="h-8 w-8" />
+            </div>
+          </Link>
+
+          <Link href="/relatorios/disponiveis" className="bg-gradient-to-r from-purple-600 to-purple-700 rounded-lg shadow-lg p-6 text-white hover:shadow-xl transition-shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold">Disponíveis</h3>
+                <p className="text-sm text-purple-100 mt-1">Ver veículos disponíveis</p>
+              </div>
+              <CheckCircle className="h-8 w-8" />
             </div>
           </Link>
         </div>

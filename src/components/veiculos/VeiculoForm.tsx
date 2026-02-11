@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { createVeiculo, updateVeiculo } from '@/lib/actions/veiculos.actions';
+import { createVeiculo, updateVeiculo, listPrefixosAtivos, listLocaisTrabalhoAtivos } from '@/lib/actions/veiculos.actions';
 import { Button } from '@/components/ui/Button';
 import type { Veiculo } from '@/lib/types/database.types';
 
@@ -16,22 +16,44 @@ export default function VeiculoForm({ veiculo, onSuccess }: VeiculoFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
-    prefixo: veiculo?.prefixo || '',
+    prefixo_id: veiculo?.prefixo_id || '',
     placa: veiculo?.placa || '',
     modelo: veiculo?.modelo || '',
-    local_trabalho: veiculo?.local_trabalho || '',
+    local_trabalho_id: veiculo?.local_trabalho_id || '',
     nome_motorista: veiculo?.nome_motorista || '',
     telefone_motorista: veiculo?.telefone_motorista || '',
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [prefixos, setPrefixos] = useState<any[]>([]);
+  const [locais, setLocais] = useState<any[]>([]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      const prefixosResult = await listPrefixosAtivos();
+      const locaisResult = await listLocaisTrabalhoAtivos();
+      
+      if (prefixosResult.success) setPrefixos(prefixosResult.data || []);
+      if (locaisResult.success) setLocais(locaisResult.data || []);
+    };
+    
+    loadData();
+  }, []);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     
-    // Todos os campos devem ser em CAIXA ALTA
-    setFormData(prev => ({
-      ...prev,
-      [name]: value.toUpperCase(),
-    }));
+    // Campos text devem ser em CAIXA ALTA
+    if (e.target instanceof HTMLInputElement) {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value.toUpperCase(),
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -53,10 +75,10 @@ export default function VeiculoForm({ veiculo, onSuccess }: VeiculoFormProps) {
         
         if (!veiculo) {
           setFormData({
-            prefixo: '',
+            prefixo_id: '',
             placa: '',
             modelo: '',
-            local_trabalho: '',
+            local_trabalho_id: '',
             nome_motorista: '',
             telefone_motorista: '',
           });
@@ -85,19 +107,29 @@ export default function VeiculoForm({ veiculo, onSuccess }: VeiculoFormProps) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label htmlFor="prefixo" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="prefixo_id" className="block text-sm font-medium text-gray-700 mb-1">
             Prefixo <span className="text-red-500">*</span>
           </label>
-          <input
-            type="text"
-            id="prefixo"
-            name="prefixo"
-            value={formData.prefixo}
+          <select
+            id="prefixo_id"
+            name="prefixo_id"
+            value={formData.prefixo_id}
             onChange={handleChange}
             required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
-            placeholder="V001"
-          />
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">Selecione um prefixo</option>
+            {prefixos.map((prefixo) => (
+              <option key={prefixo.id} value={prefixo.id}>
+                {prefixo.nome}
+              </option>
+            ))}
+          </select>
+          {prefixos.length === 0 && (
+            <p className="mt-1 text-xs text-orange-600">
+              Nenhum prefixo cadastrado. <a href="/cadastros/prefixos" className="text-blue-600 hover:underline">Cadastrar prefixos</a>
+            </p>
+          )}
         </div>
 
         <div>
@@ -132,19 +164,29 @@ export default function VeiculoForm({ veiculo, onSuccess }: VeiculoFormProps) {
         </div>
 
         <div>
-          <label htmlFor="local_trabalho" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="local_trabalho_id" className="block text-sm font-medium text-gray-700 mb-1">
             Local de Trabalho <span className="text-red-500">*</span>
           </label>
-          <input
-            type="text"
-            id="local_trabalho"
-            name="local_trabalho"
-            value={formData.local_trabalho}
+          <select
+            id="local_trabalho_id"
+            name="local_trabalho_id"
+            value={formData.local_trabalho_id}
             onChange={handleChange}
             required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
-            placeholder="SEDE"
-          />
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">Selecione um local de trabalho</option>
+            {locais.map((local) => (
+              <option key={local.id} value={local.id}>
+                {local.nome}
+              </option>
+            ))}
+          </select>
+          {locais.length === 0 && (
+            <p className="mt-1 text-xs text-orange-600">
+              Nenhum local cadastrado. <a href="/cadastros/locais" className="text-blue-600 hover:underline">Cadastrar locais</a>
+            </p>
+          )}
         </div>
 
         <div>
