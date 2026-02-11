@@ -190,12 +190,12 @@ export default function OrdemDetail({ ordem: ordemInicial }: OrdemDetailProps) {
               <div>
                 <span className="text-sm text-gray-600">Modelo:</span>
                 <span className="ml-2 text-sm font-semibold text-gray-900">
-                  {ordem.veiculo.marca} {ordem.veiculo.modelo}
+                  {ordem.veiculo.modelo || 'N/A'}
                 </span>
               </div>
               <div>
-                <span className="text-sm text-gray-600">Ano:</span>
-                <span className="ml-2 text-sm font-semibold text-gray-900">{ordem.veiculo.ano}</span>
+                <span className="text-sm text-gray-600">Local de Trabalho:</span>
+                <span className="ml-2 text-sm font-semibold text-gray-900">{ordem.veiculo.local_trabalho}</span>
               </div>
             </div>
           </div>

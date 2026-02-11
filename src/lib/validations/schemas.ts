@@ -7,28 +7,13 @@ export const veiculoSchema = z.object({
     .transform(val => val.toUpperCase().trim()),
   
   placa: z.string()
-    .min(7, 'Placa inválida')
-    .max(8, 'Placa inválida')
-    .regex(/^[A-Za-z]{3}-?[0-9][A-Za-z0-9][0-9]{2}$/, 'Formato de placa inválido (ABC-1234 ou ABC1D23)')
-    .transform(val => val.toUpperCase().trim()),
-  
-  marca: z.string()
-    .min(1, 'Marca é obrigatória')
-    .max(100, 'Marca deve ter no máximo 100 caracteres')
+    .min(8, 'Placa inválida - use formato ABC-1234')
+    .max(8, 'Placa inválida - use formato ABC-1234')
+    .regex(/^[A-Za-z]{3}-[0-9][A-Za-z0-9][0-9]{2}$/, 'Formato de placa inválido - use ABC-1234 (com hífen)')
     .transform(val => val.toUpperCase().trim()),
   
   modelo: z.string()
-    .min(1, 'Modelo é obrigatório')
     .max(100, 'Modelo deve ter no máximo 100 caracteres')
-    .transform(val => val.toUpperCase().trim()),
-  
-  ano: z.number()
-    .int('Ano deve ser um número inteiro')
-    .min(1900, 'Ano inválido')
-    .max(2100, 'Ano inválido'),
-  
-  cor: z.string()
-    .max(50, 'Cor deve ter no máximo 50 caracteres')
     .transform(val => val.toUpperCase().trim())
     .optional(),
   
@@ -44,10 +29,6 @@ export const veiculoSchema = z.object({
   
   telefone_motorista: z.string()
     .max(20, 'Telefone deve ter no máximo 20 caracteres')
-    .optional(),
-  
-  observacoes: z.string()
-    .transform(val => val.toUpperCase().trim())
     .optional(),
 });
 

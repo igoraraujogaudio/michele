@@ -118,7 +118,7 @@ export default function NovaOrdemForm({ veiculosDisponiveis }: NovaOrdemFormProp
               <option value="">Selecione um veículo</option>
               {veiculosDisponiveis.map((veiculo) => (
                 <option key={veiculo.id} value={veiculo.id}>
-                  {veiculo.prefixo} - {veiculo.placa} ({veiculo.marca} {veiculo.modelo})
+                  {veiculo.prefixo} - {veiculo.placa} {veiculo.modelo ? `(${veiculo.modelo})` : ''}
                 </option>
               ))}
             </select>
@@ -215,12 +215,12 @@ export default function NovaOrdemForm({ veiculosDisponiveis }: NovaOrdemFormProp
               <p className="text-blue-900 font-semibold">{veiculoSelecionado.placa}</p>
             </div>
             <div>
-              <p className="text-blue-600 font-medium">Marca/Modelo</p>
-              <p className="text-blue-900 font-semibold">{veiculoSelecionado.marca} {veiculoSelecionado.modelo}</p>
+              <p className="text-blue-600 font-medium">Modelo</p>
+              <p className="text-blue-900 font-semibold">{veiculoSelecionado.modelo || 'N/A'}</p>
             </div>
             <div>
-              <p className="text-blue-600 font-medium">Ano</p>
-              <p className="text-blue-900 font-semibold">{veiculoSelecionado.ano}</p>
+              <p className="text-blue-600 font-medium">Local de Trabalho</p>
+              <p className="text-blue-900 font-semibold">{veiculoSelecionado.local_trabalho}</p>
             </div>
           </div>
         </div>
@@ -259,7 +259,7 @@ export default function NovaOrdemForm({ veiculosDisponiveis }: NovaOrdemFormProp
               <option value="">Selecione um veículo reserva</option>
               {veiculosReserva.map((veiculo) => (
                 <option key={veiculo.id} value={veiculo.id}>
-                  {veiculo.prefixo} - {veiculo.placa} ({veiculo.marca} {veiculo.modelo})
+                  {veiculo.prefixo} - {veiculo.placa} {veiculo.modelo ? `(${veiculo.modelo})` : ''}
                 </option>
               ))}
             </select>
