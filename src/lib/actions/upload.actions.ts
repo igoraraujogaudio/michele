@@ -155,7 +155,7 @@ export async function uploadVeiculos(file: File): Promise<ApiResponse<UploadResu
     const worksheet = workbook.Sheets[sheetName];
     const data = XLSX.utils.sheet_to_json(worksheet);
 
-    // Buscar prefixos e locais disponíveis
+    // Buscar prefixos, locais e gerências disponíveis
     const { data: prefixos } = await supabase
       .from('prefixos')
       .select('id, nome')
@@ -166,8 +166,83 @@ export async function uploadVeiculos(file: File): Promise<ApiResponse<UploadResu
       .select('id, nome')
       .eq('ativo', true);
 
-    const prefixoMap = new Map(prefixos?.map(p => [p.nome, p.id]) || []);
-    const localMap = new Map(locais?.map(l => [l.nome, l.id]) || []);
+    const { data: gerencias } = await supabase
+      .from('gerencias')
+      .select('id, nome')
+      .eq('ativo', true);
+
+    const prefixoMap = new Map(prefixos?.map(p => [p.nome.toUpperCase(), p.id]) || []);
+    const localMap = new Map(locais?.map(l => [l.nome.toUpperCase(), l.id]) || []);
+    const gerenciaMap = new Map(gerencias?.map(g => [g.nome.toUpperCase(), g.id]) || []);
+
+    // Função auxiliar para criar ou buscar prefixo
+    async function getOrCreatePrefixo(nome: string): Promise<string | null> {
+      const nomeUpper = nome.toUpperCase().trim();
+      
+      if (prefixoMap.has(nomeUpper)) {
+        return prefixoMap.get(nomeUpper)!;
+      }
+
+      // Criar novo prefixo
+      const { data: novoPrefixo, error } = await supabase
+        .from('prefixos')
+        .insert({ nome: nomeUpper, ativo: true })
+        .select('id')
+        .single();
+
+      if (error || !novoPrefixo) {
+        return null;
+      }
+
+      prefixoMap.set(nomeUpper, novoPrefixo.id);
+      return novoPrefixo.id;
+    }
+
+    // Função auxiliar para criar ou buscar local de trabalho
+    async function getOrCreateLocal(nome: string): Promise<string | null> {
+      const nomeUpper = nome.toUpperCase().trim();
+      
+      if (localMap.has(nomeUpper)) {
+        return localMap.get(nomeUpper)!;
+      }
+
+      // Criar novo local de trabalho
+      const { data: novoLocal, error } = await supabase
+        .from('locais_trabalho')
+        .insert({ nome: nomeUpper, ativo: true })
+        .select('id')
+        .single();
+
+      if (error || !novoLocal) {
+        return null;
+      }
+
+      localMap.set(nomeUpper, novoLocal.id);
+      return novoLocal.id;
+    }
+
+    // Função auxiliar para criar ou buscar gerência
+    async function getOrCreateGerencia(nome: string): Promise<string | null> {
+      const nomeUpper = nome.toUpperCase().trim();
+      
+      if (gerenciaMap.has(nomeUpper)) {
+        return gerenciaMap.get(nomeUpper)!;
+      }
+
+      // Criar nova gerência
+      const { data: novaGerencia, error } = await supabase
+        .from('gerencias')
+        .insert({ nome: nomeUpper, ativo: true })
+        .select('id')
+        .single();
+
+      if (error || !novaGerencia) {
+        return null;
+      }
+
+      gerenciaMap.set(nomeUpper, novaGerencia.id);
+      return novaGerencia.id;
+    }
 
     const result: UploadResult = {
       success: 0,
@@ -181,40 +256,61 @@ export async function uploadVeiculos(file: File): Promise<ApiResponse<UploadResu
         const modelo = row['MODELO'] || row['modelo'] || row['Modelo'];
         const prefixoNome = row['PREFIXO'] || row['prefixo'] || row['Prefixo'];
         const localNome = row['LOCAL'] || row['local'] || row['Local'] || row['LOCAL_TRABALHO'] || row['local_trabalho'];
+        const gerenciaNome = row['GERENCIA'] || row['gerencia'] || row['Gerencia'];
         const nomeMotorista = row['MOTORISTA'] || row['motorista'] || row['Nome_Motorista'] || row['nome_motorista'];
         const telefoneMotorista = row['TELEFONE'] || row['telefone'] || row['Telefone_Motorista'] || row['telefone_motorista'];
 
+        if (!prefixoNome || typeof prefixoNome !== 'string' || prefixoNome.trim() === '') {
+          result.errors.push(`Linha inválida: prefixo não encontrado`);
+          continue;
+        }
+
+        // Se placa não foi fornecida ou está vazia, usa o prefixo como placa
+        let placaFinal = placa;
         if (!placa || typeof placa !== 'string' || placa.trim() === '') {
-          result.errors.push(`Linha inválida: placa não encontrada`);
+          placaFinal = prefixoNome;
+        }
+
+        // Criar ou buscar prefixo
+        const prefixoId = await getOrCreatePrefixo(prefixoNome);
+        if (!prefixoId) {
+          result.errors.push(`Erro ao criar/buscar prefixo "${prefixoNome}"`);
           continue;
         }
 
-        if (!prefixoNome || !prefixoMap.has(prefixoNome.toUpperCase().trim())) {
-          result.errors.push(`Prefixo "${prefixoNome}" não encontrado ou inativo`);
-          continue;
+        // Criar ou buscar local de trabalho (OPCIONAL)
+        let localId: string | null = null;
+        if (localNome && typeof localNome === 'string' && localNome.trim() !== '' && localNome !== '#N/D' && localNome !== '0') {
+          localId = await getOrCreateLocal(localNome);
+          // Se não conseguir criar/buscar o local, apenas ignora (não gera erro)
+          // O veículo será cadastrado sem local de trabalho
         }
 
-        if (!localNome || !localMap.has(localNome.toUpperCase().trim())) {
-          result.errors.push(`Local "${localNome}" não encontrado ou inativo`);
-          continue;
+        // Criar ou buscar gerência (OPCIONAL)
+        let gerenciaId: string | null = null;
+        if (gerenciaNome && typeof gerenciaNome === 'string' && gerenciaNome.trim() !== '' && gerenciaNome !== '#N/D' && gerenciaNome !== '0') {
+          gerenciaId = await getOrCreateGerencia(gerenciaNome);
+          // Se não conseguir criar/buscar a gerência, apenas ignora (não gera erro)
+          // O veículo será cadastrado sem gerência
         }
 
         const { error } = await supabase
           .from('veiculos')
           .insert({
-            placa: placa.toUpperCase().trim(),
+            placa: placaFinal.toUpperCase().trim(),
             modelo: modelo ? modelo.toUpperCase().trim() : null,
-            prefixo_id: prefixoMap.get(prefixoNome.toUpperCase().trim()),
-            local_trabalho_id: localMap.get(localNome.toUpperCase().trim()),
+            prefixo_id: prefixoId,
+            local_trabalho_id: localId,
+            gerencia_id: gerenciaId,
             nome_motorista: nomeMotorista ? nomeMotorista.toUpperCase().trim() : null,
             telefone_motorista: telefoneMotorista || null,
           });
 
         if (error) {
           if (error.code === '23505') {
-            result.errors.push(`Placa "${placa}" já existe`);
+            result.errors.push(`Placa/Prefixo "${placaFinal}" já existe`);
           } else {
-            result.errors.push(`Erro ao inserir veículo "${placa}": ${error.message}`);
+            result.errors.push(`Erro ao inserir veículo "${placaFinal}": ${error.message}`);
           }
         } else {
           result.success++;

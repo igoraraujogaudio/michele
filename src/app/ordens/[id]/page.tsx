@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import OrdemDetail from '@/components/ordens/OrdemDetail';
+import { listEvidencias } from '@/lib/actions/evidencias.actions';
 import type { OrdemComVeiculo } from '@/lib/types/database.types';
 
 export default async function OrdemPage({ params }: { params: Promise<{ id: string }> }) {
@@ -23,6 +24,10 @@ export default async function OrdemPage({ params }: { params: Promise<{ id: stri
 
   const ordemComVeiculo = ordem as unknown as OrdemComVeiculo;
 
+  // Buscar evidências fotográficas
+  const evidenciasResult = await listEvidencias(id);
+  const evidencias = evidenciasResult.success ? evidenciasResult.data || [] : [];
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
@@ -30,7 +35,7 @@ export default async function OrdemPage({ params }: { params: Promise<{ id: stri
         <p className="text-gray-600 mt-2">Visualize e gerencie a ordem de manutenção</p>
       </div>
 
-      <OrdemDetail ordem={ordemComVeiculo} />
+      <OrdemDetail ordem={ordemComVeiculo} evidencias={evidencias} />
     </div>
   );
 }

@@ -17,17 +17,7 @@ export async function createVeiculo(data: CreateVeiculoDTO): Promise<ApiResponse
 
     const validatedData = veiculoSchema.parse(data);
 
-    const { prefixo, placa } = validatedData;
-    const { data: existingPrefixo } = await supabase
-      .from('veiculos')
-      .select('id')
-      .eq('prefixo', prefixo)
-      .single();
-
-    if (existingPrefixo) {
-      return { success: false, error: `Prefixo ${prefixo} já está cadastrado` };
-    }
-
+    const { placa, prefixo } = validatedData;
     const { data: existingPlaca } = await supabase
       .from('veiculos')
       .select('id')
@@ -38,9 +28,38 @@ export async function createVeiculo(data: CreateVeiculoDTO): Promise<ApiResponse
       return { success: false, error: `Placa ${placa} já está cadastrada` };
     }
 
+    const { data: existingPrefixo } = await supabase
+      .from('prefixos')
+      .select('id')
+      .eq('nome', prefixo)
+      .single();
+
+    let prefixo_id: string;
+    if (existingPrefixo) {
+      prefixo_id = existingPrefixo.id;
+    } else {
+      const { data: newPrefixo, error: prefixoError } = await supabase
+        .from('prefixos')
+        .insert({ nome: prefixo, ativo: true })
+        .select('id')
+        .single();
+
+      if (prefixoError) {
+        console.error('Erro ao criar prefixo:', prefixoError);
+        return { success: false, error: 'Erro ao criar prefixo' };
+      }
+      prefixo_id = newPrefixo.id;
+    }
+
+    const { prefixo: _, ...veiculoData } = validatedData;
+    const dataToInsert = {
+      ...veiculoData,
+      prefixo_id,
+    };
+
     const { data: veiculo, error } = await supabase
       .from('veiculos')
-      .insert(validatedData)
+      .insert(dataToInsert)
       .select()
       .single();
 
@@ -71,19 +90,6 @@ export async function updateVeiculo(id: string, data: UpdateVeiculoDTO): Promise
 
     const validatedData = updateVeiculoSchema.parse(data);
 
-    if (validatedData.prefixo) {
-      const { data: existingPrefixo } = await supabase
-        .from('veiculos')
-        .select('id')
-        .eq('prefixo', validatedData.prefixo)
-        .neq('id', id)
-        .single();
-
-      if (existingPrefixo) {
-        return { success: false, error: `Prefixo ${validatedData.prefixo} já está cadastrado` };
-      }
-    }
-
     if (validatedData.placa) {
       const { data: existingPlaca } = await supabase
         .from('veiculos')
@@ -97,9 +103,44 @@ export async function updateVeiculo(id: string, data: UpdateVeiculoDTO): Promise
       }
     }
 
+    let prefixo_id = undefined;
+    if (validatedData.prefixo !== undefined) {
+      if (validatedData.prefixo && validatedData.prefixo.trim() !== '') {
+        const { data: existingPrefixo } = await supabase
+          .from('prefixos')
+          .select('id')
+          .eq('nome', validatedData.prefixo)
+          .single();
+
+        if (existingPrefixo) {
+          prefixo_id = existingPrefixo.id;
+        } else {
+          const { data: newPrefixo, error: prefixoError } = await supabase
+            .from('prefixos')
+            .insert({ nome: validatedData.prefixo, ativo: true })
+            .select('id')
+            .single();
+
+          if (prefixoError) {
+            console.error('Erro ao criar prefixo:', prefixoError);
+            return { success: false, error: 'Erro ao criar prefixo' };
+          }
+          prefixo_id = newPrefixo.id;
+        }
+      } else {
+        prefixo_id = null;
+      }
+    }
+
+    const { prefixo: _, ...veiculoData } = validatedData;
+    const dataToUpdate: any = { ...veiculoData };
+    if (prefixo_id !== undefined) {
+      dataToUpdate.prefixo_id = prefixo_id;
+    }
+
     const { data: veiculo, error } = await supabase
       .from('veiculos')
-      .update(validatedData)
+      .update(dataToUpdate)
       .eq('id', id)
       .select()
       .single();
@@ -179,7 +220,11 @@ export async function getVeiculo(id: string): Promise<ApiResponse<Veiculo>> {
 
     const { data: veiculo, error } = await supabase
       .from('veiculos')
-      .select('*')
+      .select(`
+        *,
+        prefixo:prefixos(nome),
+        local_trabalho:locais_trabalho(nome)
+      `)
       .eq('id', id)
       .single();
 
@@ -208,8 +253,13 @@ export async function listVeiculos(): Promise<ApiResponse<Veiculo[]>> {
 
     const { data: veiculos, error } = await supabase
       .from('veiculos')
-      .select('*')
-      .order('prefixo', { ascending: true });
+      .select(`
+        *,
+        prefixo:prefixos(nome),
+        local_trabalho:locais_trabalho(nome),
+        gerencia:gerencias(nome)
+      `)
+      .order('placa', { ascending: true });
 
     if (error) {
       console.error('Erro ao listar veículos:', error);
@@ -244,9 +294,14 @@ export async function listVeiculosDisponiveis(): Promise<ApiResponse<Veiculo[]>>
 
     const { data: veiculos, error } = await supabase
       .from('veiculos')
-      .select('*')
+      .select(`
+        *,
+        prefixo:prefixos(nome),
+        local_trabalho:locais_trabalho(nome),
+        gerencia:gerencias(nome)
+      `)
       .not('id', 'in', `(${veiculosEmManutencaoIds.join(',')})`)
-      .order('prefixo', { ascending: true });
+      .order('placa', { ascending: true });
 
     if (error) {
       console.error('Erro ao listar veículos disponíveis:', error);

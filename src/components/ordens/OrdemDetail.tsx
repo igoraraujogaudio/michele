@@ -3,12 +3,22 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { updateOrdemManutencao, updateOrdemStatus } from '@/lib/actions/ordens.actions';
+import { uploadEvidencia, type EvidenciaManutencao } from '@/lib/actions/evidencias.actions';
 import { Button } from '@/components/ui/Button';
-import { Clock, Edit2, Save, X } from 'lucide-react';
+import ImageUpload from '@/components/ui/ImageUpload';
+import EvidenciasGallery from '@/components/ordens/EvidenciasGallery';
+import { Clock, Edit2, Save, X, Camera } from 'lucide-react';
 import type { OrdemComVeiculo, StatusOrdem } from '@/lib/types/database.types';
+
+interface ImageFile {
+  file: File;
+  preview: string;
+  descricao?: string;
+}
 
 interface OrdemDetailProps {
   ordem: OrdemComVeiculo;
+  evidencias: EvidenciaManutencao[];
 }
 
 const STATUS_OPTIONS: StatusOrdem[] = [
@@ -30,9 +40,13 @@ const STATUS_ENCERRAMENTO: StatusOrdem[] = [
   'PARADO PRONTO CG',
 ];
 
-export default function OrdemDetail({ ordem: ordemInicial }: OrdemDetailProps) {
+export default function OrdemDetail({ ordem: ordemInicial, evidencias: evidenciasIniciais }: OrdemDetailProps) {
   const router = useRouter();
   const [ordem, setOrdem] = useState(ordemInicial);
+  const [evidencias, setEvidencias] = useState(evidenciasIniciais);
+  const [novasEvidencias, setNovasEvidencias] = useState<ImageFile[]>([]);
+  const [uploadingEvidencias, setUploadingEvidencias] = useState(false);
+  const [mostrarUpload, setMostrarUpload] = useState(false);
   const [tempoAtual, setTempoAtual] = useState(0);
   const [editandoTempo, setEditandoTempo] = useState(false);
   const [tempoManual, setTempoManual] = useState('');
@@ -181,7 +195,7 @@ export default function OrdemDetail({ ordem: ordemInicial }: OrdemDetailProps) {
             <div className="space-y-2">
               <div>
                 <span className="text-sm text-gray-600">Prefixo:</span>
-                <span className="ml-2 text-sm font-semibold text-gray-900">{ordem.veiculo.prefixo}</span>
+                <span className="ml-2 text-sm font-semibold text-gray-900">{ordem.veiculo.prefixo?.nome || '-'}</span>
               </div>
               <div>
                 <span className="text-sm text-gray-600">Placa:</span>
@@ -195,7 +209,7 @@ export default function OrdemDetail({ ordem: ordemInicial }: OrdemDetailProps) {
               </div>
               <div>
                 <span className="text-sm text-gray-600">Local de Trabalho:</span>
-                <span className="ml-2 text-sm font-semibold text-gray-900">{ordem.veiculo.local_trabalho}</span>
+                <span className="ml-2 text-sm font-semibold text-gray-900">{ordem.veiculo.local_trabalho?.nome || '-'}</span>
               </div>
             </div>
           </div>
@@ -375,6 +389,83 @@ export default function OrdemDetail({ ordem: ordemInicial }: OrdemDetailProps) {
             </Button>
           </div>
         </div>
+      </div>
+
+      {/* Seção de Evidências Fotográficas */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <div className="flex justify-between items-center mb-4">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Evidências Fotográficas</h2>
+            <p className="text-sm text-gray-600">Fotos do problema, defeito ou reparo</p>
+          </div>
+          {!ordemEncerrada && (
+            <Button
+              onClick={() => setMostrarUpload(!mostrarUpload)}
+              variant="secondary"
+              className="flex items-center gap-2"
+            >
+              <Camera className="w-4 h-4" />
+              {mostrarUpload ? 'Cancelar' : 'Adicionar Fotos'}
+            </Button>
+          )}
+        </div>
+
+        {/* Upload de novas evidências */}
+        {mostrarUpload && !ordemEncerrada && (
+          <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <ImageUpload 
+              onImagesChange={setNovasEvidencias}
+              maxImages={10}
+              maxSizeMB={5}
+            />
+            {novasEvidencias.length > 0 && (
+              <div className="mt-4 flex gap-3">
+                <Button
+                  onClick={async () => {
+                    setUploadingEvidencias(true);
+                    try {
+                      const uploadPromises = novasEvidencias.map(img => 
+                        uploadEvidencia(ordem.id, img.file, img.descricao)
+                      );
+                      
+                      await Promise.all(uploadPromises);
+                      
+                      // Recarregar página para mostrar novas evidências
+                      router.refresh();
+                      setMostrarUpload(false);
+                      setNovasEvidencias([]);
+                    } catch (err) {
+                      setError('Erro ao fazer upload das evidências');
+                    } finally {
+                      setUploadingEvidencias(false);
+                    }
+                  }}
+                  loading={uploadingEvidencias}
+                  className="flex-1"
+                >
+                  Salvar {novasEvidencias.length} Foto{novasEvidencias.length > 1 ? 's' : ''}
+                </Button>
+                <Button
+                  onClick={() => {
+                    setNovasEvidencias([]);
+                    setMostrarUpload(false);
+                  }}
+                  variant="secondary"
+                  disabled={uploadingEvidencias}
+                >
+                  Cancelar
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Galeria de evidências existentes */}
+        <EvidenciasGallery 
+          evidencias={evidencias}
+          onDelete={() => router.refresh()}
+          readOnly={ordemEncerrada}
+        />
       </div>
     </div>
   );

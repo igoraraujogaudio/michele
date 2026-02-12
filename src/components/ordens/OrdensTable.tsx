@@ -27,7 +27,7 @@ export default function OrdensTable({ ordens }: OrdensTableProps) {
     return ordens.filter((ordem) => {
       const matchesSearch = 
         ordem.numero_ordem.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        ordem.veiculo?.prefixo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        ordem.veiculo?.prefixo?.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         ordem.veiculo?.placa?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         ordem.descricao?.toLowerCase().includes(searchTerm.toLowerCase());
 
@@ -125,7 +125,7 @@ export default function OrdensTable({ ordens }: OrdensTableProps) {
                     {ordem.numero_ordem}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {ordem.veiculo?.prefixo} - {ordem.veiculo?.placa}
+                    {ordem.veiculo?.prefixo?.nome || 'Sem prefixo'} - {ordem.veiculo?.placa}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
                     {ordem.descricao}

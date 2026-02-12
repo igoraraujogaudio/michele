@@ -30,10 +30,10 @@ export function gerarTemplateLocais() {
 
 export function gerarTemplateVeiculos() {
   const ws = XLSX.utils.aoa_to_sheet([
-    ['PLACA', 'MODELO', 'PREFIXO', 'LOCAL', 'MOTORISTA', 'TELEFONE'],
-    ['ABC1234', 'FIAT UNO', 'V001', 'SEDE', 'JOÃO DA SILVA', '(11) 98765-4321'],
-    ['DEF5678', 'VW GOL', 'V002', 'FILIAL 1', 'MARIA SANTOS', '(11) 91234-5678'],
-    ['GHI9012', 'CHEVET ONIX', 'V003', 'FILIAL 2', 'PEDRO COSTA', '(11) 92345-6789'],
+    ['PLACA', 'MODELO', 'PREFIXO', 'LOCAL', 'GERENCIA', 'MOTORISTA', 'TELEFONE'],
+    ['ABC1234', 'FIAT UNO', 'V001', 'SEDE', 'DIR', 'JOÃO DA SILVA', '(11) 98765-4321'],
+    ['DEF5678', 'VW GOL', 'V002', 'FILIAL 1', 'UGU', 'MARIA SANTOS', '(11) 91234-5678'],
+    ['GHI9012', 'CHEVET ONIX', 'V003', 'FILIAL 2', 'LDS', 'PEDRO COSTA', '(11) 92345-6789'],
   ]);
   
   const wb = XLSX.utils.book_new();

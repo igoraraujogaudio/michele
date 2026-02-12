@@ -24,7 +24,11 @@ export function Header({ user }: HeaderProps) {
   const [loading, setLoading] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [ordensDropdownOpen, setOrdensDropdownOpen] = useState(false);
+  const [relatorioDropdownOpen, setRelatorioDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const ordensDropdownRef = useRef<HTMLDivElement>(null);
+  const relatorioDropdownRef = useRef<HTMLDivElement>(null);
 
   const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
 
@@ -32,6 +36,12 @@ export function Header({ user }: HeaderProps) {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setUserDropdownOpen(false);
+      }
+      if (ordensDropdownRef.current && !ordensDropdownRef.current.contains(event.target as Node)) {
+        setOrdensDropdownOpen(false);
+      }
+      if (relatorioDropdownRef.current && !relatorioDropdownRef.current.contains(event.target as Node)) {
+        setRelatorioDropdownOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -70,26 +80,99 @@ export function Header({ user }: HeaderProps) {
             <Link href="/dashboard" className="text-gray-700 hover:text-blue-600 transition">
               Dashboard
             </Link>
-            <Link href="/veiculos" className="text-gray-700 hover:text-blue-600 transition">
-              Veículos
-            </Link>
-            <Link href="/ordens" className="text-gray-700 hover:text-blue-600 transition">
-              Ordens
-            </Link>
-            <Link href="/relatorios/manutencao" className="text-gray-700 hover:text-blue-600 transition">
-              Em Manutenção
-            </Link>
-            <Link href="/relatorios/disponiveis" className="text-gray-700 hover:text-blue-600 transition">
-              Disponíveis
-            </Link>
+            
+            {/* Dropdown Ordens */}
+            <div className="relative" ref={ordensDropdownRef}>
+              <button
+                onClick={() => setOrdensDropdownOpen(!ordensDropdownOpen)}
+                className="text-gray-700 hover:text-blue-600 transition flex items-center gap-1"
+              >
+                Ordens
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              
+              {ordensDropdownOpen && (
+                <div className="absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                  <Link
+                    href="/ordens"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition"
+                    onClick={() => setOrdensDropdownOpen(false)}
+                  >
+                    Todas as Ordens
+                  </Link>
+                  <Link
+                    href="/ordens/nova"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition"
+                    onClick={() => setOrdensDropdownOpen(false)}
+                  >
+                    Nova Ordem
+                  </Link>
+                  <Link
+                    href="/relatorios/manutencao"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition"
+                    onClick={() => setOrdensDropdownOpen(false)}
+                  >
+                    Em Manutenção
+                  </Link>
+                  <div className="border-t border-gray-200 my-2"></div>
+                  <Link
+                    href="/upload/historico"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition"
+                    onClick={() => setOrdensDropdownOpen(false)}
+                  >
+                    Importar Histórico
+                  </Link>
+                </div>
+              )}
+            </div>
+            
+            {/* Dropdown Veículos */}
+            <div className="relative" ref={relatorioDropdownRef}>
+              <button
+                onClick={() => setRelatorioDropdownOpen(!relatorioDropdownOpen)}
+                className="text-gray-700 hover:text-blue-600 transition flex items-center gap-1"
+              >
+                Veículos
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              
+              {relatorioDropdownOpen && (
+                <div className="absolute left-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                  <Link
+                    href="/veiculos"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition"
+                    onClick={() => setRelatorioDropdownOpen(false)}
+                  >
+                    Todos os Veículos
+                  </Link>
+                  <Link
+                    href="/relatorios/disponiveis"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition"
+                    onClick={() => setRelatorioDropdownOpen(false)}
+                  >
+                    Disponíveis
+                  </Link>
+                  <div className="border-t border-gray-200 my-2"></div>
+                  <Link
+                    href="/upload/gerencias"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition"
+                    onClick={() => setRelatorioDropdownOpen(false)}
+                  >
+                    Atualizar Gerências
+                  </Link>
+                </div>
+              )}
+            </div>
+            
             <Link href="/cadastros/prefixos" className="text-gray-700 hover:text-blue-600 transition">
               Prefixos
             </Link>
             <Link href="/cadastros/locais" className="text-gray-700 hover:text-blue-600 transition">
               Locais
-            </Link>
-            <Link href="/upload" className="text-gray-700 hover:text-blue-600 transition">
-              Upload
             </Link>
           </nav>
 
@@ -145,34 +228,54 @@ export function Header({ user }: HeaderProps) {
               >
                 Dashboard
               </Link>
-              <Link
-                href="/veiculos"
-                className="text-gray-700 hover:text-blue-600 transition px-2 py-1"
-                onClick={() => setMenuOpen(false)}
-              >
-                Veículos
-              </Link>
-              <Link
-                href="/ordens"
-                className="text-gray-700 hover:text-blue-600 transition px-2 py-1"
-                onClick={() => setMenuOpen(false)}
-              >
-                Ordens
-              </Link>
-              <Link
-                href="/relatorios/manutencao"
-                className="text-gray-700 hover:text-blue-600 transition px-2 py-1"
-                onClick={() => setMenuOpen(false)}
-              >
-                Em Manutenção
-              </Link>
-              <Link
-                href="/relatorios/disponiveis"
-                className="text-gray-700 hover:text-blue-600 transition px-2 py-1"
-                onClick={() => setMenuOpen(false)}
-              >
-                Disponíveis
-              </Link>
+              <div className="border-l-2 border-blue-600 pl-2">
+                <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Ordens</p>
+                <Link
+                  href="/ordens"
+                  className="block text-gray-700 hover:text-blue-600 transition py-1"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Todas as Ordens
+                </Link>
+                <Link
+                  href="/ordens/nova"
+                  className="block text-gray-700 hover:text-blue-600 transition py-1"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Nova Ordem
+                </Link>
+                <Link
+                  href="/relatorios/manutencao"
+                  className="block text-gray-700 hover:text-blue-600 transition py-1"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Em Manutenção
+                </Link>
+                <Link
+                  href="/upload/historico"
+                  className="block text-gray-700 hover:text-blue-600 transition py-1 mt-2 pt-2 border-t border-gray-200"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Importar Histórico
+                </Link>
+              </div>
+              <div className="border-l-2 border-green-600 pl-2">
+                <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Veículos</p>
+                <Link
+                  href="/veiculos"
+                  className="block text-gray-700 hover:text-blue-600 transition py-1"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Todos os Veículos
+                </Link>
+                <Link
+                  href="/relatorios/disponiveis"
+                  className="block text-gray-700 hover:text-blue-600 transition py-1"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Disponíveis
+                </Link>
+              </div>
               <Link
                 href="/cadastros/prefixos"
                 className="text-gray-700 hover:text-blue-600 transition px-2 py-1"
@@ -186,13 +289,6 @@ export function Header({ user }: HeaderProps) {
                 onClick={() => setMenuOpen(false)}
               >
                 Locais
-              </Link>
-              <Link
-                href="/upload"
-                className="text-gray-700 hover:text-blue-600 transition px-2 py-1"
-                onClick={() => setMenuOpen(false)}
-              >
-                Upload
               </Link>
               <div className="border-t border-gray-200 pt-3 mt-3">
                 <p className="text-gray-900 font-medium px-2">{userName}</p>

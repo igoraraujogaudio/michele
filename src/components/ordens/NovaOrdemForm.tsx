@@ -3,8 +3,17 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createOrdemManutencao } from '@/lib/actions/ordens.actions';
+import { uploadEvidencia } from '@/lib/actions/evidencias.actions';
 import { Button } from '@/components/ui/Button';
+import VeiculoSearchBox from '@/components/ui/VeiculoSearchBox';
+import ImageUpload from '@/components/ui/ImageUpload';
 import type { Veiculo, StatusOrdem } from '@/lib/types/database.types';
+
+interface ImageFile {
+  file: File;
+  preview: string;
+  descricao?: string;
+}
 
 interface NovaOrdemFormProps {
   veiculosDisponiveis: Veiculo[];
@@ -20,6 +29,7 @@ const STATUS_OPTIONS: StatusOrdem[] = [
   'PARADO PRONTO CG',
   'PARADO EM MANUTENÇÃO CJ',
   'PARADO EM MANUTENÇÃO CG',
+  'SUBSTITUÍDO POR',
 ];
 
 export default function NovaOrdemForm({ veiculosDisponiveis }: NovaOrdemFormProps) {
@@ -27,18 +37,17 @@ export default function NovaOrdemForm({ veiculosDisponiveis }: NovaOrdemFormProp
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [veiculoSelecionado, setVeiculoSelecionado] = useState<Veiculo | null>(null);
-  const [reservaDesignada, setReservaDesignada] = useState(false);
+  const [evidencias, setEvidencias] = useState<ImageFile[]>([]);
   
   const [formData, setFormData] = useState({
     numero_ordem: '',
     veiculo_id: '',
-    status: 'EM MANUTENÇÃO' as StatusOrdem,
+    status: '' as StatusOrdem,
     descricao: '',
     observacoes: '',
-    is_reserva: false,
+    veiculo_substituto_id: '',
     nome_motorista: '',
     telefone_motorista: '',
-    veiculo_reserva_id: '',
   });
 
   useEffect(() => {
@@ -50,7 +59,8 @@ export default function NovaOrdemForm({ veiculosDisponiveis }: NovaOrdemFormProp
     }
   }, [formData.veiculo_id, veiculosDisponiveis]);
 
-  const veiculosReserva = veiculosDisponiveis.filter(v => v.id !== formData.veiculo_id);
+  // Veículos disponíveis para substituição (excluindo o veículo em manutenção)
+  const veiculosSubstitutos = veiculosDisponiveis.filter(v => v.id !== formData.veiculo_id);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,13 +70,26 @@ export default function NovaOrdemForm({ veiculosDisponiveis }: NovaOrdemFormProp
     try {
       const dataToSubmit = {
         ...formData,
-        is_reserva: reservaDesignada,
-        veiculo_reserva_id: formData.veiculo_reserva_id || undefined,
+        veiculo_substituto_id: formData.status === 'SUBSTITUÍDO POR' ? formData.veiculo_substituto_id : undefined,
       };
 
       const result = await createOrdemManutencao(dataToSubmit);
 
-      if (result.success) {
+      if (result.success && result.data) {
+        // Upload das evidências fotográficas
+        if (evidencias.length > 0) {
+          const uploadPromises = evidencias.map(img => 
+            uploadEvidencia(result.data!.id, img.file, img.descricao)
+          );
+          
+          const uploadResults = await Promise.all(uploadPromises);
+          const failedUploads = uploadResults.filter(r => !r.success);
+          
+          if (failedUploads.length > 0) {
+            console.warn(`${failedUploads.length} evidências falharam no upload`);
+          }
+        }
+        
         router.push('/ordens');
         router.refresh();
       } else {
@@ -110,20 +133,13 @@ export default function NovaOrdemForm({ veiculosDisponiveis }: NovaOrdemFormProp
             <label htmlFor="veiculo_id" className="block text-sm font-medium text-gray-700 mb-1">
               Veículo <span className="text-red-500">*</span>
             </label>
-            <select
-              id="veiculo_id"
+            <VeiculoSearchBox
+              veiculos={veiculosDisponiveis}
               value={formData.veiculo_id}
-              onChange={(e) => setFormData(prev => ({ ...prev, veiculo_id: e.target.value }))}
+              onChange={(veiculoId) => setFormData(prev => ({ ...prev, veiculo_id: veiculoId }))}
+              onVeiculoSelect={setVeiculoSelecionado}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Selecione um veículo</option>
-              {veiculosDisponiveis.map((veiculo) => (
-                <option key={veiculo.id} value={veiculo.id}>
-                  {veiculo.prefixo} - {veiculo.placa} {veiculo.modelo ? `(${veiculo.modelo})` : ''}
-                </option>
-              ))}
-            </select>
+            />
           </div>
 
           <div>
@@ -137,6 +153,7 @@ export default function NovaOrdemForm({ veiculosDisponiveis }: NovaOrdemFormProp
               required
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
+              <option value="">Selecione o status</option>
               {STATUS_OPTIONS.map((status) => (
                 <option key={status} value={status}>
                   {status}
@@ -210,7 +227,7 @@ export default function NovaOrdemForm({ veiculosDisponiveis }: NovaOrdemFormProp
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
             <div>
               <p className="text-blue-600 font-medium">Prefixo</p>
-              <p className="text-blue-900 font-semibold">{veiculoSelecionado.prefixo}</p>
+              <p className="text-blue-900 font-semibold">{veiculoSelecionado.prefixo?.nome || '-'}</p>
             </div>
             <div>
               <p className="text-blue-600 font-medium">Placa</p>
@@ -222,63 +239,53 @@ export default function NovaOrdemForm({ veiculosDisponiveis }: NovaOrdemFormProp
             </div>
             <div>
               <p className="text-blue-600 font-medium">Local de Trabalho</p>
-              <p className="text-blue-900 font-semibold">{veiculoSelecionado.local_trabalho}</p>
+              <p className="text-blue-900 font-semibold">{veiculoSelecionado.local_trabalho?.nome || '-'}</p>
             </div>
           </div>
         </div>
       )}
 
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Veículo Reserva</h2>
-        <p className="text-sm text-gray-600 mb-4">
-          Indique se foi designado um veículo reserva para substituir o veículo em manutenção
-        </p>
-        
-        <div className="mb-4">
-          <label className="flex items-center space-x-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={reservaDesignada}
-              onChange={(e) => {
-                setReservaDesignada(e.target.checked);
-                if (!e.target.checked) {
-                  setFormData(prev => ({ ...prev, is_reserva: false, veiculo_reserva_id: '' }));
-                }
-              }}
-              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-            />
-            <span className="text-sm font-medium text-gray-700">Foi designado veículo reserva</span>
-          </label>
-        </div>
-
-        {reservaDesignada && (
+      {formData.status === 'SUBSTITUÍDO POR' && (
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Veículo Substituto</h2>
+          <p className="text-sm text-gray-600 mb-4">
+            Selecione qual veículo está substituindo o veículo em manutenção
+          </p>
+          
           <div>
-            <label htmlFor="veiculo_reserva" className="block text-sm font-medium text-gray-700 mb-1">
-              Qual veículo substituiu? <span className="text-red-500">*</span>
+            <label htmlFor="veiculo_substituto" className="block text-sm font-medium text-gray-700 mb-1">
+              Veículo Substituto <span className="text-red-500">*</span>
             </label>
-            <p className="text-xs text-gray-500 mb-2">
-              Selecione o veículo que foi usado como reserva para substituir o prefixo em manutenção
-            </p>
-            <select
-              id="veiculo_reserva"
-              value={formData.veiculo_reserva_id}
-              onChange={(e) => setFormData(prev => ({ ...prev, veiculo_reserva_id: e.target.value }))}
-              required={reservaDesignada}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Selecione um veículo reserva</option>
-              {veiculosReserva.map((veiculo) => (
-                <option key={veiculo.id} value={veiculo.id}>
-                  {veiculo.prefixo} - {veiculo.placa} {veiculo.modelo ? `(${veiculo.modelo})` : ''}
-                </option>
-              ))}
-            </select>
-            {veiculosReserva.length === 0 && (
+            <VeiculoSearchBox
+              veiculos={veiculosSubstitutos}
+              value={formData.veiculo_substituto_id}
+              onChange={(veiculoId) => setFormData(prev => ({ ...prev, veiculo_substituto_id: veiculoId }))}
+              placeholder="Buscar veículo substituto por prefixo ou placa..."
+              required={true}
+            />
+            {veiculosSubstitutos.length === 0 && (
               <p className="mt-2 text-sm text-orange-600">
-                Nenhum veículo disponível para reserva
+                Nenhum veículo disponível para substituição
               </p>
             )}
           </div>
+        </div>
+      )}
+
+      <div className="bg-white rounded-lg shadow p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Evidências Fotográficas</h2>
+        <p className="text-sm text-gray-600 mb-4">
+          Adicione fotos do problema, defeito ou estado do veículo (opcional)
+        </p>
+        <ImageUpload 
+          onImagesChange={setEvidencias}
+          maxImages={10}
+          maxSizeMB={5}
+        />
+        {evidencias.length > 0 && (
+          <p className="mt-3 text-sm text-green-600">
+            ✓ {evidencias.length} foto{evidencias.length > 1 ? 's' : ''} selecionada{evidencias.length > 1 ? 's' : ''}
+          </p>
         )}
       </div>
 

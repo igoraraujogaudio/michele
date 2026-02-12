@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { createVeiculo, updateVeiculo, listPrefixosAtivos, listLocaisTrabalhoAtivos } from '@/lib/actions/veiculos.actions';
+import { createVeiculo, updateVeiculo, listLocaisTrabalhoAtivos } from '@/lib/actions/veiculos.actions';
+import { listGerenciasAtivas } from '@/lib/actions/gerencias.actions';
 import { Button } from '@/components/ui/Button';
 import type { Veiculo } from '@/lib/types/database.types';
 
@@ -15,25 +16,27 @@ export default function VeiculoForm({ veiculo, onSuccess }: VeiculoFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [semPlaca, setSemPlaca] = useState(false);
   const [formData, setFormData] = useState({
-    prefixo_id: veiculo?.prefixo_id || '',
+    prefixo: veiculo?.prefixo?.nome || '',
     placa: veiculo?.placa || '',
     modelo: veiculo?.modelo || '',
     local_trabalho_id: veiculo?.local_trabalho_id || '',
+    gerencia_id: veiculo?.gerencia_id || '',
     nome_motorista: veiculo?.nome_motorista || '',
     telefone_motorista: veiculo?.telefone_motorista || '',
   });
 
-  const [prefixos, setPrefixos] = useState<any[]>([]);
   const [locais, setLocais] = useState<any[]>([]);
+  const [gerencias, setGerencias] = useState<any[]>([]);
 
   useEffect(() => {
     const loadData = async () => {
-      const prefixosResult = await listPrefixosAtivos();
       const locaisResult = await listLocaisTrabalhoAtivos();
+      const gerenciasResult = await listGerenciasAtivas();
       
-      if (prefixosResult.success) setPrefixos(prefixosResult.data || []);
       if (locaisResult.success) setLocais(locaisResult.data || []);
+      if (gerenciasResult.success) setGerencias(gerenciasResult.data || []);
     };
     
     loadData();
@@ -46,8 +49,8 @@ export default function VeiculoForm({ veiculo, onSuccess }: VeiculoFormProps) {
     if (e.target instanceof HTMLInputElement) {
       let processedValue = value.toUpperCase();
       
-      // Formatação automática de placa (ABC-1234 ou ABC1D23)
-      if (name === 'placa') {
+      // Formatação automática de placa (ABC-1234 ou ABC1D23) - APENAS se não for "sem placa"
+      if (name === 'placa' && !semPlaca) {
         // Remove caracteres não alfanuméricos
         processedValue = processedValue.replace(/[^A-Z0-9]/g, '');
         
@@ -72,14 +75,36 @@ export default function VeiculoForm({ veiculo, onSuccess }: VeiculoFormProps) {
         }
       }
       
-      setFormData(prev => ({
-        ...prev,
-        [name]: processedValue,
-      }));
+      setFormData(prev => {
+        const newData = {
+          ...prev,
+          [name]: processedValue,
+        };
+        
+        // Se mudou o prefixo e está marcado "sem placa", sincroniza a placa
+        if (name === 'prefixo' && semPlaca) {
+          newData.placa = processedValue;
+        }
+        
+        return newData;
+      });
     } else {
       setFormData(prev => ({
         ...prev,
         [name]: value,
+      }));
+    }
+  };
+
+  const handleSemPlacaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const checked = e.target.checked;
+    setSemPlaca(checked);
+    
+    if (checked) {
+      // Se marcar "sem placa", copia o prefixo para a placa
+      setFormData(prev => ({
+        ...prev,
+        placa: prev.prefixo,
       }));
     }
   };
@@ -90,6 +115,16 @@ export default function VeiculoForm({ veiculo, onSuccess }: VeiculoFormProps) {
     setError(null);
 
     try {
+      // Validação de formato de placa no front-end (apenas se não for "sem placa")
+      if (!semPlaca && formData.placa) {
+        const placaRegex = /^[A-Z]{3}-?[0-9][A-Z0-9][0-9]{2}$/;
+        if (!placaRegex.test(formData.placa)) {
+          setError('Formato de placa inválido. Use ABC-1234 ou ABC1D34. Para veículos sem placa, marque a opção "Veículo sem placa".');
+          setLoading(false);
+          return;
+        }
+      }
+
       const result = veiculo
         ? await updateVeiculo(veiculo.id, formData)
         : await createVeiculo(formData);
@@ -103,13 +138,15 @@ export default function VeiculoForm({ veiculo, onSuccess }: VeiculoFormProps) {
         
         if (!veiculo) {
           setFormData({
-            prefixo_id: '',
+            prefixo: '',
             placa: '',
             modelo: '',
             local_trabalho_id: '',
+            gerencia_id: '',
             nome_motorista: '',
             telefone_motorista: '',
           });
+          setSemPlaca(false);
         }
       } else {
         setError(result.error || 'Erro ao salvar veículo');
@@ -135,29 +172,19 @@ export default function VeiculoForm({ veiculo, onSuccess }: VeiculoFormProps) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label htmlFor="prefixo_id" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="prefixo" className="block text-sm font-medium text-gray-700 mb-1">
             Prefixo <span className="text-red-500">*</span>
           </label>
-          <select
-            id="prefixo_id"
-            name="prefixo_id"
-            value={formData.prefixo_id}
+          <input
+            type="text"
+            id="prefixo"
+            name="prefixo"
+            value={formData.prefixo}
             onChange={handleChange}
             required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Selecione um prefixo</option>
-            {prefixos.map((prefixo) => (
-              <option key={prefixo.id} value={prefixo.id}>
-                {prefixo.nome}
-              </option>
-            ))}
-          </select>
-          {prefixos.length === 0 && (
-            <p className="mt-1 text-xs text-orange-600">
-              Nenhum prefixo cadastrado. <a href="/cadastros/prefixos" className="text-blue-600 hover:underline">Cadastrar prefixos</a>
-            </p>
-          )}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
+            placeholder="VAN-01"
+          />
         </div>
 
         <div>
@@ -171,9 +198,24 @@ export default function VeiculoForm({ veiculo, onSuccess }: VeiculoFormProps) {
             value={formData.placa}
             onChange={handleChange}
             required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
-            placeholder="ABC-1234"
+            disabled={semPlaca}
+            className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase ${
+              semPlaca ? 'bg-gray-100 cursor-not-allowed' : ''
+            }`}
+            placeholder={semPlaca ? 'Prefixo será usado como placa' : 'ABC-1234'}
           />
+          <div className="mt-2 flex items-center">
+            <input
+              type="checkbox"
+              id="semPlaca"
+              checked={semPlaca}
+              onChange={handleSemPlacaChange}
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+            <label htmlFor="semPlaca" className="ml-2 text-sm text-gray-600">
+              Veículo sem placa (usar prefixo como identificador)
+            </label>
+          </div>
         </div>
 
         <div>
@@ -193,17 +235,16 @@ export default function VeiculoForm({ veiculo, onSuccess }: VeiculoFormProps) {
 
         <div>
           <label htmlFor="local_trabalho_id" className="block text-sm font-medium text-gray-700 mb-1">
-            Local de Trabalho <span className="text-red-500">*</span>
+            Local de Trabalho
           </label>
           <select
             id="local_trabalho_id"
             name="local_trabalho_id"
             value={formData.local_trabalho_id}
             onChange={handleChange}
-            required
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <option value="">Selecione um local de trabalho</option>
+            <option value="">Selecione um local (opcional)</option>
             {locais.map((local) => (
               <option key={local.id} value={local.id}>
                 {local.nome}
@@ -213,6 +254,31 @@ export default function VeiculoForm({ veiculo, onSuccess }: VeiculoFormProps) {
           {locais.length === 0 && (
             <p className="mt-1 text-xs text-orange-600">
               Nenhum local cadastrado. <a href="/cadastros/locais" className="text-blue-600 hover:underline">Cadastrar locais</a>
+            </p>
+          )}
+        </div>
+
+        <div>
+          <label htmlFor="gerencia_id" className="block text-sm font-medium text-gray-700 mb-1">
+            Gerência
+          </label>
+          <select
+            id="gerencia_id"
+            name="gerencia_id"
+            value={formData.gerencia_id}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">Selecione uma gerência (opcional)</option>
+            {gerencias.map((gerencia) => (
+              <option key={gerencia.id} value={gerencia.id}>
+                {gerencia.nome}
+              </option>
+            ))}
+          </select>
+          {gerencias.length === 0 && (
+            <p className="mt-1 text-xs text-orange-600">
+              Nenhuma gerência cadastrada. <a href="/cadastros/gerencias" className="text-blue-600 hover:underline">Cadastrar gerências</a>
             </p>
           )}
         </div>

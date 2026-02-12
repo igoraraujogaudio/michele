@@ -22,8 +22,8 @@ export default function VeiculoTable({ veiculos }: VeiculoTableProps) {
   const endIndex = startIndex + itemsPerPage;
   const currentVeiculos = veiculos.slice(startIndex, endIndex);
 
-  const handleDelete = async (id: string, prefixo: string | null) => {
-    const prefixoDisplay = prefixo || 'sem prefixo';
+  const handleDelete = async (id: string, prefixo: { nome: string } | null | undefined) => {
+    const prefixoDisplay = prefixo?.nome || 'sem prefixo';
     if (!confirm(`Tem certeza que deseja excluir o veículo ${prefixoDisplay}?`)) {
       return;
     }
@@ -63,7 +63,7 @@ export default function VeiculoTable({ veiculos }: VeiculoTableProps) {
     if (veiculo.ordem_atual) {
       return 'OFICINA';
     }
-    return veiculo.local_trabalho || 'N/A';
+    return veiculo.local_trabalho?.nome || 'N/A';
   };
 
   if (veiculos.length === 0) {
@@ -111,7 +111,7 @@ export default function VeiculoTable({ veiculos }: VeiculoTableProps) {
               return (
                 <tr key={veiculo.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{veiculo.prefixo}</div>
+                    <div className="text-sm font-medium text-gray-900">{veiculo.prefixo?.nome || '-'}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">{veiculo.placa}</div>

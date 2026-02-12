@@ -1,5 +1,5 @@
 import { listOrdensManutencao } from '@/lib/actions/ordens.actions';
-import OrdensTable from '@/components/ordens/OrdensTable';
+import OrdensListView from '@/components/ordens/OrdensListView';
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
 
@@ -23,7 +23,7 @@ export default async function OrdensPage() {
         </Link>
       </div>
 
-      <OrdensTable ordens={ordens} />
+      <OrdensListView ordens={ordens} />
     </div>
   );
 }

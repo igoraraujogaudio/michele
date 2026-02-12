@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+export const statusVeiculoSchema = z.enum(['OPERAÇÃO', 'MANUTENÇÃO']);
+
 export const veiculoSchema = z.object({
   prefixo: z.string()
     .min(1, 'Prefixo é obrigatório')
@@ -7,9 +9,8 @@ export const veiculoSchema = z.object({
     .transform(val => val.toUpperCase().trim()),
   
   placa: z.string()
-    .min(8, 'Placa inválida - use formato ABC-1234')
-    .max(8, 'Placa inválida - use formato ABC-1234')
-    .regex(/^[A-Za-z]{3}-[0-9][A-Za-z0-9][0-9]{2}$/, 'Formato de placa inválido - use ABC-1234 (com hífen)')
+    .min(1, 'Placa é obrigatória')
+    .max(20, 'Placa deve ter no máximo 20 caracteres')
     .transform(val => val.toUpperCase().trim()),
   
   modelo: z.string()
@@ -17,10 +18,14 @@ export const veiculoSchema = z.object({
     .transform(val => val.toUpperCase().trim())
     .optional(),
   
-  local_trabalho: z.string()
-    .min(1, 'Local de trabalho é obrigatório')
-    .max(200, 'Local de trabalho deve ter no máximo 200 caracteres')
-    .transform(val => val.toUpperCase().trim()),
+  local_trabalho_id: z.string()
+    .optional()
+    .transform(val => val === '' ? undefined : val)
+    .pipe(z.string().uuid('ID do local de trabalho inválido').optional()),
+  
+  status: statusVeiculoSchema
+    .default('OPERAÇÃO')
+    .optional(),
   
   nome_motorista: z.string()
     .max(200, 'Nome do motorista deve ter no máximo 200 caracteres')
@@ -44,6 +49,7 @@ export const statusOrdemSchema = z.enum([
   'PARADO PRONTO CG',
   'PARADO EM MANUTENÇÃO CJ',
   'PARADO EM MANUTENÇÃO CG',
+  'SUBSTITUÍDO POR',
 ]);
 
 export const ordemManutencaoSchema = z.object({
@@ -67,11 +73,10 @@ export const ordemManutencaoSchema = z.object({
     .transform(val => val.toUpperCase().trim())
     .optional(),
   
-  is_reserva: z.boolean()
-    .default(false)
-    .optional(),
-  
-  veiculo_reserva_id: z.string().uuid('ID do veículo reserva inválido').optional().or(z.literal('')),
+  veiculo_substituto_id: z.string()
+    .optional()
+    .transform(val => val === '' ? undefined : val)
+    .pipe(z.string().uuid('ID do veículo substituto inválido').optional()),
   
   nome_motorista: z.string()
     .max(200, 'Nome do motorista deve ter no máximo 200 caracteres')
@@ -107,8 +112,29 @@ export const updateOrdemSchema = z.object({
     .optional(),
 });
 
+export const gerenciaSchema = z.object({
+  nome: z.string()
+    .min(1, 'Nome é obrigatório')
+    .max(100, 'Nome deve ter no máximo 100 caracteres')
+    .transform(val => val.toUpperCase().trim()),
+  
+  descricao: z.string()
+    .max(500, 'Descrição deve ter no máximo 500 caracteres')
+    .transform(val => val.toUpperCase().trim())
+    .optional(),
+  
+  ativo: z.boolean()
+    .default(true)
+    .optional(),
+});
+
+export const updateGerenciaSchema = gerenciaSchema.partial();
+
 export type VeiculoInput = z.infer<typeof veiculoSchema>;
 export type UpdateVeiculoInput = z.infer<typeof updateVeiculoSchema>;
 export type OrdemManutencaoInput = z.infer<typeof ordemManutencaoSchema>;
 export type UpdateOrdemInput = z.infer<typeof updateOrdemSchema>;
 export type StatusOrdemInput = z.infer<typeof statusOrdemSchema>;
+export type StatusVeiculoInput = z.infer<typeof statusVeiculoSchema>;
+export type GerenciaInput = z.infer<typeof gerenciaSchema>;
+export type UpdateGerenciaInput = z.infer<typeof updateGerenciaSchema>;

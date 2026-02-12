@@ -25,7 +25,11 @@ export async function createOrdemManutencao(data: CreateOrdemDTO): Promise<ApiRe
 
     const { data: veiculo } = await supabase
       .from('veiculos')
-      .select('id, prefixo')
+      .select(`
+        id,
+        placa,
+        prefixo:prefixos(nome)
+      `)
       .eq('id', validatedData.veiculo_id)
       .single();
 
@@ -56,7 +60,7 @@ export async function createOrdemManutencao(data: CreateOrdemDTO): Promise<ApiRe
     if (ordemAberta) {
       return { 
         success: false, 
-        error: `Veículo ${veiculo.prefixo} já possui ordem aberta (${ordemAberta.numero_ordem})` 
+        error: `Veículo ${veiculo.placa} já possui ordem aberta (${ordemAberta.numero_ordem})` 
       };
     }
 
@@ -72,6 +76,15 @@ export async function createOrdemManutencao(data: CreateOrdemDTO): Promise<ApiRe
     if (error) {
       console.error('Erro ao criar ordem:', error);
       return { success: false, error: 'Erro ao criar ordem de manutenção' };
+    }
+
+    const { error: veiculoError } = await supabase
+      .from('veiculos')
+      .update({ status: 'MANUTENÇÃO' })
+      .eq('id', validatedData.veiculo_id);
+
+    if (veiculoError) {
+      console.error('Erro ao atualizar status do veículo:', veiculoError);
     }
 
     revalidatePath('/ordens');
@@ -117,15 +130,21 @@ export async function updateOrdemStatus(
     }
 
     const updateData: any = { status };
+    let shouldUpdateVehicleStatus = false;
+    let newVehicleStatus: 'OPERAÇÃO' | 'MANUTENÇÃO' = 'MANUTENÇÃO';
 
     if (status === 'PRONTO' || status === 'REPARO PARCIAL') {
       if (!ordemAtual.data_fechamento) {
         updateData.data_fechamento = new Date().toISOString();
+        shouldUpdateVehicleStatus = true;
+        newVehicleStatus = 'OPERAÇÃO';
       }
     } else {
       if (ordemAtual.status === 'PRONTO' || ordemAtual.status === 'REPARO PARCIAL') {
         updateData.data_fechamento = null;
         updateData.tempo_parado_minutos = null;
+        shouldUpdateVehicleStatus = true;
+        newVehicleStatus = 'MANUTENÇÃO';
       }
     }
 
@@ -139,6 +158,17 @@ export async function updateOrdemStatus(
     if (error) {
       console.error('Erro ao atualizar status:', error);
       return { success: false, error: 'Erro ao atualizar status da ordem' };
+    }
+
+    if (shouldUpdateVehicleStatus) {
+      const { error: veiculoError } = await supabase
+        .from('veiculos')
+        .update({ status: newVehicleStatus })
+        .eq('id', ordemAtual.veiculo_id);
+
+      if (veiculoError) {
+        console.error('Erro ao atualizar status do veículo:', veiculoError);
+      }
     }
 
     if (observacao) {
@@ -292,8 +322,11 @@ export async function listOrdensManutencao(): Promise<ApiResponse<OrdemComVeicul
       .from('ordens_manutencao')
       .select(`
         *,
-        veiculo:veiculos!ordens_manutencao_veiculo_id_fkey(*),
-        veiculo_reserva:veiculos!ordens_manutencao_veiculo_reserva_id_fkey(*)
+        veiculo:veiculos!ordens_manutencao_veiculo_id_fkey(
+          *,
+          prefixo:prefixos(nome),
+          local_trabalho:locais_trabalho(nome)
+        )
       `)
       .order('data_abertura', { ascending: false });
 

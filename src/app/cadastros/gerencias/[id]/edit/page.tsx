@@ -1,0 +1,24 @@
+import { getGerencia } from '@/lib/actions/gerencias.actions';
+import { redirect } from 'next/navigation';
+import GerenciaForm from '@/components/gerencias/GerenciaForm';
+
+export default async function EditGerenciaPage({ params }: { params: { id: string } }) {
+  const resultado = await getGerencia(params.id);
+
+  if (!resultado.success || !resultado.data) {
+    redirect('/cadastros/gerencias');
+  }
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900">Editar Gerência</h1>
+        <p className="text-gray-600 mt-2">Atualize as informações da gerência {resultado.data.nome}</p>
+      </div>
+
+      <div className="max-w-2xl">
+        <GerenciaForm gerencia={resultado.data} />
+      </div>
+    </div>
+  );
+}

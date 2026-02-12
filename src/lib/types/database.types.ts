@@ -7,20 +7,30 @@ export type StatusOrdem =
   | 'PARADO PRONTO CJ'
   | 'PARADO PRONTO CG'
   | 'PARADO EM MANUTENÇÃO CJ'
-  | 'PARADO EM MANUTENÇÃO CG';
+  | 'PARADO EM MANUTENÇÃO CG'
+  | 'SUBSTITUÍDO POR';
+
+export type StatusVeiculo = 'OPERAÇÃO' | 'MANUTENÇÃO';
 
 export interface Veiculo {
   id: string;
-  prefixo: string | null;          // Mantido para compatibilidade
-  prefixo_id: string | null;      // Nova foreign key
+  prefixo_id: string | null;
   placa: string;
   modelo: string | null;
-  local_trabalho: string | null;   // Mantido para compatibilidade
-  local_trabalho_id: string | null; // Nova foreign key
+  local_trabalho_id: string | null;
+  gerencia_id: string | null;
+  status: StatusVeiculo;
   nome_motorista: string | null;
   telefone_motorista: string | null;
   created_at: string;
   updated_at: string;
+  prefixo?: { nome: string } | null;
+  local_trabalho?: { nome: string } | null;
+  gerencia?: { nome: string } | null;
+  marca?: string | null;
+  ano?: number | null;
+  cor?: string | null;
+  observacoes?: string | null;
 }
 
 export interface OrdemManutencao {
@@ -30,7 +40,8 @@ export interface OrdemManutencao {
   status: StatusOrdem;
   descricao: string;
   observacoes: string | null;
-  is_reserva: boolean;
+  veiculo_substituto_id: string | null;
+  is_reserva: boolean | null;
   veiculo_reserva_id: string | null;
   nome_motorista: string | null;
   telefone_motorista: string | null;
@@ -79,22 +90,45 @@ export interface LocalTrabalho {
   updated_at: string;
 }
 
+export interface Gerencia {
+  id: string;
+  nome: string;
+  descricao: string | null;
+  ativo: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface CreateVeiculoDTO {
-  prefixo_id: string;
+  prefixo: string;
   placa: string;
   modelo?: string;
-  local_trabalho_id: string;
+  local_trabalho_id?: string;
+  status?: StatusVeiculo;
   nome_motorista?: string;
   telefone_motorista?: string;
 }
 
 export interface UpdateVeiculoDTO {
-  prefixo_id?: string;
+  prefixo?: string;
   placa?: string;
   modelo?: string;
   local_trabalho_id?: string;
+  status?: StatusVeiculo;
   nome_motorista?: string;
   telefone_motorista?: string;
+}
+
+export interface CreateGerenciaDTO {
+  nome: string;
+  descricao?: string;
+  ativo?: boolean;
+}
+
+export interface UpdateGerenciaDTO {
+  nome?: string;
+  descricao?: string;
+  ativo?: boolean;
 }
 
 export interface CreateOrdemDTO {

@@ -2,16 +2,15 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { uploadVeiculos, type UploadResult } from '@/lib/actions/upload.actions';
-import { gerarTemplateVeiculos } from '@/lib/utils/excel-templates';
+import { uploadGerenciasPorPlaca, type UploadGerenciasResult } from '@/lib/actions/upload-gerencias.actions';
 import { Button } from '@/components/ui/Button';
-import { Upload, Download, FileText, CheckCircle, XCircle } from 'lucide-react';
+import { Upload, FileText, CheckCircle, XCircle, Info } from 'lucide-react';
 
-export default function UploadVeiculos() {
+export default function UploadGerencias() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<UploadResult | null>(null);
+  const [result, setResult] = useState<UploadGerenciasResult | null>(null);
   const [dragActive, setDragActive] = useState(false);
 
   const handleUpload = async (file: File) => {
@@ -20,7 +19,7 @@ export default function UploadVeiculos() {
     setResult(null);
 
     try {
-      const response = await uploadVeiculos(file);
+      const response = await uploadGerenciasPorPlaca(file);
       
       if (response.success && response.data) {
         setResult(response.data);
@@ -44,14 +43,13 @@ export default function UploadVeiculos() {
       f.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
       f.type === 'application/vnd.ms-excel' ||
       f.name.endsWith('.xlsx') ||
-      f.name.endsWith('.xls') ||
-      f.name.endsWith('.csv')
+      f.name.endsWith('.xls')
     );
 
     if (file) {
       handleUpload(file);
     } else {
-      setError('Por favor, envie um arquivo Excel (.xlsx, .xls ou .csv)');
+      setError('Por favor, envie um arquivo Excel (.xlsx ou .xls)');
     }
   };
 
@@ -62,31 +60,12 @@ export default function UploadVeiculos() {
     }
   };
 
-  const downloadTemplate = () => {
-    const buffer = gerarTemplateVeiculos();
-    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'template_veiculos.xlsx';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900">Upload de Veículos</h2>
-            <p className="text-gray-600 mt-1">Faça upload em massa de veículos via Excel</p>
-          </div>
-          <Button onClick={downloadTemplate} variant="secondary" className="flex items-center gap-2">
-            <Download className="w-4 h-4" />
-            Baixar Template
-          </Button>
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold text-gray-900">Upload de Gerências por Placa</h2>
+          <p className="text-gray-600 mt-1">Atualize as gerências dos veículos em massa via Excel</p>
         </div>
 
         <div
@@ -105,17 +84,17 @@ export default function UploadVeiculos() {
             Arraste um arquivo Excel aqui ou clique para selecionar
           </p>
           <p className="text-sm text-gray-500 mb-4">
-            Formatos aceitos: .xlsx, .xls, .csv
+            Formatos aceitos: .xlsx, .xls
           </p>
           <input
             type="file"
-            accept=".xlsx,.xls,.csv"
+            accept=".xlsx,.xls"
             onChange={handleFileSelect}
             className="hidden"
-            id="file-upload"
+            id="file-upload-gerencias"
           />
           <label
-            htmlFor="file-upload"
+            htmlFor="file-upload-gerencias"
             className="cursor-pointer inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
           >
             Selecionar Arquivo
@@ -123,14 +102,14 @@ export default function UploadVeiculos() {
         </div>
 
         {loading && (
-          <div className="text-center py-4">
+          <div className="text-center py-4 mt-4">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-            <p className="text-gray-600">Processando arquivo...</p>
+            <p className="text-gray-600">Processando gerências...</p>
           </div>
         )}
 
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mt-4">
             <div className="flex items-center">
               <XCircle className="w-5 h-5 text-red-600 mr-2" />
               <p className="text-red-600">{error}</p>
@@ -139,23 +118,27 @@ export default function UploadVeiculos() {
         )}
 
         {result && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mt-4">
             <div className="flex items-center mb-3">
               <CheckCircle className="w-5 h-5 text-green-600 mr-2" />
               <h3 className="text-green-900 font-semibold">Upload concluído!</h3>
             </div>
-            <div className="text-sm text-gray-700">
-              <p>Total de registros: {result.total}</p>
-              <p>Registros inseridos: {result.success}</p>
-              <p>Erros: {result.errors.length}</p>
+            <div className="text-sm text-gray-700 mb-3">
+              <p><strong>Total de registros:</strong> {result.total}</p>
+              <p><strong>Veículos atualizados:</strong> {result.success}</p>
+              <p><strong>Gerências criadas:</strong> {result.gerenciasCriadas}</p>
+              <p><strong>Erros:</strong> {result.errors.length}</p>
             </div>
             {result.errors.length > 0 && (
               <div className="mt-3">
-                <h4 className="font-semibold text-gray-900 mb-2">Erros encontrados:</h4>
-                <ul className="text-sm text-red-600 space-y-1 max-h-32 overflow-y-auto">
-                  {result.errors.map((error, index) => (
+                <h4 className="font-semibold text-gray-900 mb-2">Erros encontrados ({result.errors.length}):</h4>
+                <ul className="text-sm text-red-600 space-y-1 max-h-48 overflow-y-auto">
+                  {result.errors.slice(0, 20).map((error, index) => (
                     <li key={index}>{error}</li>
                   ))}
+                  {result.errors.length > 20 && (
+                    <li className="text-gray-600">... e mais {result.errors.length - 20} erros</li>
+                  )}
                 </ul>
               </div>
             )}
@@ -183,47 +166,26 @@ export default function UploadVeiculos() {
             <tbody>
               <tr className="border-b">
                 <td className="py-2">PLACA</td>
-                <td className="py-2">Não*</td>
-                <td className="py-2">ABC1234 ou LTS</td>
-              </tr>
-              <tr className="border-b">
-                <td className="py-2">MODELO</td>
-                <td className="py-2">Não</td>
-                <td className="py-2">FIAT UNO</td>
-              </tr>
-              <tr className="border-b">
-                <td className="py-2">PREFIXO</td>
                 <td className="py-2">Sim</td>
-                <td className="py-2">V001 ou LTS</td>
-              </tr>
-              <tr className="border-b">
-                <td className="py-2">LOCAL</td>
-                <td className="py-2">Não</td>
-                <td className="py-2">SEDE</td>
+                <td className="py-2">ABC1234</td>
               </tr>
               <tr className="border-b">
                 <td className="py-2">GERENCIA</td>
-                <td className="py-2">Não</td>
-                <td className="py-2">DIR, UGU, LDS</td>
-              </tr>
-              <tr className="border-b">
-                <td className="py-2">MOTORISTA</td>
-                <td className="py-2">Não</td>
-                <td className="py-2">JOÃO DA SILVA</td>
-              </tr>
-              <tr className="border-b">
-                <td className="py-2">TELEFONE</td>
-                <td className="py-2">Não</td>
-                <td className="py-2">(11) 98765-4321</td>
+                <td className="py-2">Sim</td>
+                <td className="py-2">DIR, UGU, LDS, etc.</td>
               </tr>
             </tbody>
           </table>
         </div>
-        <p className="text-blue-700 text-sm mt-3">
-          <strong>Importante:</strong> PREFIXO, LOCAL e GERENCIA que não existirem serão criados automaticamente. LOCAL e GERENCIA são opcionais.
-          <br />
-          <strong>*PLACA:</strong> Se vazio ou igual ao PREFIXO, o sistema usará o PREFIXO como identificador (ex: PLACA=LTS, PREFIXO=LTS).
-        </p>
+        <div className="mt-4 p-3 bg-blue-100 rounded-lg">
+          <p className="text-blue-900 text-sm flex items-start gap-2">
+            <Info className="w-5 h-5 flex-shrink-0 mt-0.5" />
+            <span>
+              <strong>Importante:</strong> O veículo deve existir no sistema. Gerências que não existirem 
+              serão criadas automaticamente. Valores como &quot;#N/D&quot; ou &quot;0&quot; serão ignorados.
+            </span>
+          </p>
+        </div>
       </div>
     </div>
   );
